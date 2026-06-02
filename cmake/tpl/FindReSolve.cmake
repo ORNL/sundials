@@ -36,10 +36,20 @@
 
 # Prefer the upstream CMake config file if the user did not point to a specific
 # include/library directory.
-if(NOT (ReSolve_INCLUDE_DIR OR ReSolve_LIBRARY_DIR OR ReSolve_LIBRARY))
+if(NOT
+   (ReSolve_INCLUDE_DIR
+    OR ReSolve_LIBRARY_DIR
+    OR ReSolve_LIBRARY))
 
-  find_package(ReSolve CONFIG QUIET PATHS "${ReSolve_DIR}"
-               PATH_SUFFIXES lib/cmake/ReSolve cmake/ReSolve)
+  find_package(
+    ReSolve
+    CONFIG
+    QUIET
+    PATHS
+    "${ReSolve_DIR}"
+    PATH_SUFFIXES
+    lib/cmake/ReSolve
+    cmake/ReSolve)
 
   if(ReSolve_FOUND AND TARGET ReSolve::ReSolve)
     if(NOT TARGET SUNDIALS::ReSolve)

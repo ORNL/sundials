@@ -32,10 +32,8 @@ include_guard(GLOBAL)
 # ReSolve is a C++ library; CXX must be enabled (SundialsSetupCompilers.cmake
 # gates include(SundialsSetupCXX) on SUNDIALS_ENABLE_RESOLVE).
 if(NOT CMAKE_CXX_COMPILER_LOADED)
-  message(
-    FATAL_ERROR
-      "ReSolve requires C++ but no C++ compiler was found. "
-      "Enable a C++ compiler or set CMAKE_CXX_COMPILER.")
+  message(FATAL_ERROR "ReSolve requires C++ but no C++ compiler was found. "
+                      "Enable a C++ compiler or set CMAKE_CXX_COMPILER.")
 endif()
 
 if(CMAKE_CXX_STANDARD LESS "14")
@@ -65,12 +63,9 @@ if(SUNDIALS_ENABLE_RESOLVE_CHECKS)
   # has missing internal includes in some ReSolve versions.
   file(
     WRITE ${TEST_DIR}/test.cpp
-    "\#include <resolve/Common.hpp>\n"
-    "int main(void) {\n"
-    "  ReSolve::real_type x = ReSolve::constants::ONE;\n"
-    "  (void)x;\n"
-    "  return 0;\n"
-    "}\n")
+    "\#include <resolve/Common.hpp>\n" "int main(void) {\n"
+    "  ReSolve::real_type x = ReSolve::constants::ONE;\n" "  (void)x;\n"
+    "  return 0;\n" "}\n")
 
   try_compile(
     COMPILE_OK ${TEST_DIR}

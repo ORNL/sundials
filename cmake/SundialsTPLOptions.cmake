@@ -553,8 +553,8 @@ sundials_option(
 
 sundials_option(SUNDIALS_ENABLE_RESOLVE BOOL "Enable ReSolve support" OFF)
 
-sundials_option(ReSolve_DIR PATH
-                "Path to the root of a ReSolve installation" "${ReSolve_DIR}")
+sundials_option(ReSolve_DIR PATH "Path to the root of a ReSolve installation"
+                "${ReSolve_DIR}")
 
 sundials_option(ReSolve_INCLUDE_DIR PATH "ReSolve include directory"
                 "${ReSolve_INCLUDE_DIR}" ADVANCED)
@@ -562,12 +562,8 @@ sundials_option(ReSolve_INCLUDE_DIR PATH "ReSolve include directory"
 sundials_option(ReSolve_LIBRARY_DIR PATH "ReSolve library directory"
                 "${ReSolve_LIBRARY_DIR}" ADVANCED)
 
-sundials_option(
-  SUNDIALS_ENABLE_RESOLVE_CHECKS
-  BOOL
-  "Enable ReSolve compatibility checks"
-  ON
-  ADVANCED)
+sundials_option(SUNDIALS_ENABLE_RESOLVE_CHECKS BOOL
+                "Enable ReSolve compatibility checks" ON ADVANCED)
 
 sundials_option(
   KokkosKernels_DIR PATH "Path to the root of a Kokkos Kernels installation"
