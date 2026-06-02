@@ -171,6 +171,15 @@ if(SUNDIALS_ENABLE_RAJA)
 endif()
 
 # ---------------------------------------------------------------
+# Find (and test) the ReSolve libraries
+# ---------------------------------------------------------------
+
+if(SUNDIALS_ENABLE_RESOLVE)
+  include(SundialsReSolve)
+  list(APPEND SUNDIALS_TPL_LIST "RESOLVE")
+endif()
+
+# ---------------------------------------------------------------
 # Find (and test) the SuperLUDIST libraries
 # ---------------------------------------------------------------
 
