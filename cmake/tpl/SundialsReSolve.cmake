@@ -29,7 +29,15 @@ include_guard(GLOBAL)
 # Section 2: Check to make sure options are compatible
 # -----------------------------------------------------------------------------
 
-# ReSolve requires C++14 or newer
+# ReSolve is a C++ library; CXX must be enabled (SundialsSetupCompilers.cmake
+# gates include(SundialsSetupCXX) on SUNDIALS_ENABLE_RESOLVE).
+if(NOT CMAKE_CXX_COMPILER_LOADED)
+  message(
+    FATAL_ERROR
+      "ReSolve requires C++ but no C++ compiler was found. "
+      "Enable a C++ compiler or set CMAKE_CXX_COMPILER.")
+endif()
+
 if(CMAKE_CXX_STANDARD LESS "14")
   message(FATAL_ERROR "CMAKE_CXX_STANDARD must be >= 14 when using ReSolve")
 endif()
@@ -53,12 +61,15 @@ if(SUNDIALS_ENABLE_RESOLVE_CHECKS)
 
   set(TEST_DIR ${PROJECT_BINARY_DIR}/RESOLVE_TEST)
 
+  # Use the self-contained Common.hpp rather than SystemSolver.hpp; the latter
+  # has missing internal includes in some ReSolve versions.
   file(
     WRITE ${TEST_DIR}/test.cpp
-    "\#include <resolve/SystemSolver.hpp>\n"
+    "\#include <resolve/Common.hpp>\n"
     "int main(void) {\n"
-    "ReSolve::SystemSolver solver;\n"
-    "return 0;\n"
+    "  ReSolve::real_type x = ReSolve::constants::ONE;\n"
+    "  (void)x;\n"
+    "  return 0;\n"
     "}\n")
 
   try_compile(
