@@ -547,6 +547,20 @@ sundials_option(
   SUNDIALS_ENABLE_KOKKOS_KERNELS BOOL "Enable Kokkos Kernels support" OFF
   DEPRECATED_NAMES ENABLE_KOKKOS_KERNELS)
 
+sundials_option(
+  KokkosKernels_DIR PATH "Path to the root of a Kokkos Kernels installation"
+  "${KokkosKernels_DIR}")
+
+sundials_option(
+  SUNDIALS_ENABLE_KOKKOS_KERNELS_CHECKS
+  BOOL
+  "Enable Kokkos Kernels compatibility checks"
+  ON
+  ADVANCED
+  DEPRECATED_NAMES
+  KOKKOS_KERNELS_WORKS
+  NEGATE_DEPRECATED)
+
 # ---------------------------------------------------------------
 # Enable ReSolve support?
 # ---------------------------------------------------------------
@@ -564,17 +578,3 @@ sundials_option(ReSolve_LIBRARY_DIR PATH "ReSolve library directory"
 
 sundials_option(SUNDIALS_ENABLE_RESOLVE_CHECKS BOOL
                 "Enable ReSolve compatibility checks" ON ADVANCED)
-
-sundials_option(
-  KokkosKernels_DIR PATH "Path to the root of a Kokkos Kernels installation"
-  "${KokkosKernels_DIR}")
-
-sundials_option(
-  SUNDIALS_ENABLE_KOKKOS_KERNELS_CHECKS
-  BOOL
-  "Enable Kokkos Kernels compatibility checks"
-  ON
-  ADVANCED
-  DEPRECATED_NAMES
-  KOKKOS_KERNELS_WORKS
-  NEGATE_DEPRECATED)
