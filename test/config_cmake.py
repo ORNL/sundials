@@ -1156,6 +1156,30 @@ def main():
         dependson="--xbraid",
     )
 
+    # ReSolve
+    group = parser.add_argument_group("ReSolve Options")
+
+    add_arg(
+        group,
+        "--resolve",
+        "SUNDIALS_RESOLVE",
+        "SUNDIALS_ENABLE_RESOLVE",
+        "OFF",
+        "BOOL",
+        "SUNDIALS ReSolve support",
+    )
+
+    add_arg(
+        group,
+        "--resolve-dir",
+        "RESOLVE_ROOT",
+        "ReSolve_DIR",
+        None,
+        "PATH",
+        "ReSolve install directory",
+        dependson="--resolve",
+    )
+
     # --------
     # Testing
     # --------
