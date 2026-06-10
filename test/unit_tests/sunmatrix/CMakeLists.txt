@@ -60,6 +60,10 @@ if(SUNDIALS_ENABLE_SUNMATRIX_ONEMKLDENSE)
   add_subdirectory(onemkldense)
 endif()
 
+if(SUNDIALS_ENABLE_SUNMATRIX_RESOLVE)
+  add_subdirectory(resolve)
+endif()
+
 if(SUNDIALS_ENABLE_SUNMATRIX_SLUNRLOC)
   add_subdirectory(slunrloc)
 endif()
