@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Programmer(s): [Your name]
+# Programmer(s): Jeffery Zhang
 # ------------------------------------------------------------------------------
 # SUNDIALS Copyright Start
 # Copyright (c) 2025-2026, Lawrence Livermore National Security,
@@ -43,8 +43,16 @@ foreach(example_tuple ${examples_list})
       ${example_target}
       PRIVATE sundials_core
               sundials_sunmatrixresolve
-              ReSolve::ReSolve
+              SUNDIALS::ReSolve
               ${EXE_EXTRA_LINK_LIBS})
+              
+    # Target GPU backends if necessary
+    if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
+      target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_CUDA)
+    elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
+      target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_HIP)
+    endif()
+
   endif()
 
   # set test name

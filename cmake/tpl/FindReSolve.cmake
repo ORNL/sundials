@@ -36,6 +36,7 @@
 
 # Prefer the upstream CMake config file if the user did not point to a specific
 # include/library directory.
+
 if(NOT
    (ReSolve_INCLUDE_DIR
     OR ReSolve_LIBRARY_DIR
@@ -54,6 +55,22 @@ if(NOT
   if(ReSolve_FOUND AND TARGET ReSolve::ReSolve)
     if(NOT TARGET SUNDIALS::ReSolve)
       add_library(SUNDIALS::ReSolve ALIAS ReSolve::ReSolve)
+    endif()
+
+    # Check for CUDA backend
+    if(TARGET ReSolve::CUDA)
+        set(RESOLVE_CUDA_FOUND TRUE CACHE BOOL "ReSolve CUDA backend found")
+        if(NOT TARGET SUNDIALS::ReSolve_CUDA)
+            add_library(SUNDIALS::ReSolve_CUDA ALIAS ReSolve::resolve_backend_cuda)
+        endif()
+    endif()
+
+    # Check for HIP backend
+    if(TARGET ReSolve::HIP)
+        set(RESOLVE_HIP_FOUND TRUE CACHE BOOL "ReSolve HIP backend found")
+        if(NOT TARGET SUNDIALS::ReSolve_HIP)
+            add_library(SUNDIALS::ReSolve_HIP ALIAS ReSolve::resolve_backend_hip)
+        endif()
     endif()
     return()
   endif()

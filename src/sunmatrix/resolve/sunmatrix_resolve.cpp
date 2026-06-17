@@ -51,15 +51,13 @@
 #define ONE  SUN_RCONST(1.0)
 
 // Content accessor macro
-#define RESOLVE_CONTENT(A) ((SUNMatrixContent_ReSolve)(A)->content) // ASSUMES CSR FORMAT DEFAULT
-#define RESOLVE_MAT(A) (RESOLVE_CONTENT(A)->mat)
-#define RESOLVE_M(A) (RESOLVE_CONTENT(A)->M)
-#define RESOLVE_N(A) (RESOLVE_CONTENT(A)->N)
-#define RESOLVE_NP(A) (RESOLVE_CONTENT(A)->NP)
-#define RESOLVE_NNZ(A) (RESOLVE_CONTENT(A)->NNZ)
-
-// TODO add checks for gpu memspace
-
+#define RESOLVE_CONTENT(A)    ((SUNMatrixContent_ReSolve)(A)->content) // ASSUMES CSR FORMAT DEFAULT
+#define RESOLVE_MAT(A)        (RESOLVE_CONTENT(A)->mat)
+#define RESOLVE_M(A)          (RESOLVE_CONTENT(A)->M)
+#define RESOLVE_N(A)          (RESOLVE_CONTENT(A)->N)
+#define RESOLVE_NP(A)         (RESOLVE_CONTENT(A)->NP)
+#define RESOLVE_NNZ(A)        (RESOLVE_CONTENT(A)->NNZ)
+#define RESOLVE_MEMSPACE(A)   (RESOLVE_CONTENT(A)->memspace)
 
 /* --------------------------------------------------------------------------
  * Constructor
@@ -91,10 +89,16 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   A->ops->getid     = SUNMatGetID_ReSolve;
   A->ops->destroy   = SUNMatDestroy_ReSolve;
   A->ops->zero      = SUNMatZero_ReSolve;
+  A->ops->clone     = SUNMatClone_ReSolve;
 
   // Create ReSolve matrix
   ReSolve::matrix::Csr* mat = new ReSolve::matrix::Csr(m, n, nnz);
-  mat->allocateMatrixData(memspace);
+  mat->allocateMatrixData(ReSolve::memory::HOST);
+  // Allocate matrix on device if necessary
+  if (memspace == ReSolve::memory::DEVICE)
+  {
+    mat->allocateMatrixData(memspace);
+  }
 
   /* Create content */
   content = NULL;
@@ -110,6 +114,7 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   content->NNZ        = nnz;
   content->NP         = m;
   content->mat        = mat;
+  content->memspace   = memspace;
 
 
   if (!(A->content))
@@ -156,44 +161,105 @@ sunindextype SUNMatrix_ReSolve_NP(SUNMatrix A)
 
 /**
  Get the pointer to the ReSolve matrix data array
- The pointer is always to the array stored on the host
 
- @param A The SUNMatrix object
+ @param[in] A The SUNMatrix object
 */
 sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
-  return RESOLVE_MAT(A)->getValues(ReSolve::memory::HOST);
+  return RESOLVE_MAT(A)->getValues(memspace);
 }
 
 /**
  Get the pointer to the ReSolve matrix offsets array
- The pointer is always to the array stored on the host
 
- @param A The SUNMatrix object
+ @param[in] A The SUNMatrix object
 */
 sunindextype* SUNMatrix_ReSolve_IndexPointers(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
-  return RESOLVE_MAT(A)->getRowData(ReSolve::memory::HOST);
+  return RESOLVE_MAT(A)->getRowData(memspace);
 }
 
 /**
  Get the pointer to the ReSolve matrix indices array
- The pointer is always to the array stored on the host
 
- @param A The SUNMatrix object
+ @param[in] A The SUNMatrix object
 */
 sunindextype* SUNMatrix_ReSolve_IndexValues(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
-  return RESOLVE_MAT(A)->getColData(ReSolve::memory::HOST);
+  return RESOLVE_MAT(A)->getColData(memspace);
+}
+
+/**
+  * @brief Tags `memspace` as updated.
+  *
+  * @param[in] memspace - memory space (HOST or DEVICE) to set to "updated"
+  *
+  * @return 0 if successful, -1 if not.
+  *
+  * The method sets the boolean flag indicating that the `memspace` is updated.
+  * It automatically sets the other data mirror to non-updated. You would
+  * use this function if you update matrix data by accessing its raw pointers.
+  * In such case, the matrix has no way of knowing which data is most recent, so
+  * you have to tell it.
+  *
+  * @warning This is an expert-level function. Use only if you know what you are
+  * doing.
+  *
+  * @note If you want to set both DEVICE and HOST memory to the same value
+  * use syncData function.
+*/
+SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+{
+  RESOLVE_MAT(A)->setUpdated(memspace);
+  return SUN_SUCCESS;
+}
+
+/**
+  * @brief Sync data in memspace with the updated memory space.
+  *
+  * @param A - The SUNMatrix_ReSolve object
+  * @param memspace - memory space to be synced up (HOST or DEVICE)
+  *
+  * @pre The memory space other than `memspace` must be up-to-date. Otherwise,
+  * this function will return an error.
+  *
+  * @see Sparse::setUpdated in the Re::Solve library
+*/
+SUNErrCode SUNMatrix_ReSolve_SyncData(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+{
+  RESOLVE_MAT(A)->syncData(memspace);
+  return SUN_SUCCESS;
 }
 
 /** 
  Print the Re::Solve matrix
 */
-void SUNMatrix_ReSolve_Print(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+void SUNMatrix_ReSolve_Print(SUNMatrix A)
 {
   RESOLVE_MAT(A)->print(std::cout, 0);
 }
+
+/**
+  Utility function to print an array on the device for debugging
+*/
+// void SUNMatrix_ReSolve_Print_Array(SUNMatrix A)
+// {
+//   if (RESOLVE_MEMSPACE(A) == ReSolve::memory::HOST) {return;}
+
+//   ReSolve::memory::MemorySpace memspace = RESOLVE_MEMSPACE(A);
+//   sunrealtype* d_data = SUNMatrix_ReSolve_Data(A, memspace);
+//   sunrealtype* h_data = new sunrealtype[SUNMatrix_ReSolve_NNZ(A)];
+
+//   cudaMemcpy(h_data, d_data, 
+//            SUNMatrix_ReSolve_NNZ(A) * sizeof(sunrealtype),
+//            cudaMemcpyDeviceToHost);
+
+//   for (int i = 0; i < SUNMatrix_ReSolve_NNZ(A); i++)
+//   {
+//     printf("data[%d] = %f\n", i, h_data[i]);
+//   }
+//   delete[] h_data;
+// }
 
 /* --------------------------------------------------------------------------
  * Implementation of generic SUNMatrix operations.
@@ -234,6 +300,7 @@ void SUNMatDestroy_ReSolve(SUNMatrix A)
   return;
 }
 
+// This function automatically syncs data between host and device
 SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 {
   if (!A)
@@ -249,9 +316,8 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
   }
 
   sunindextype i;
-  // TODO sync between device and data
 
-  // Get pointers to the data, indexvalues and indexpointers arrays in ReSolve
+  // Get pointers to the data, indexvalues and indexpointers arrays on host in ReSolve
   sunrealtype* values = RESOLVE_MAT(A)->getValues(ReSolve::memory::HOST);
 
   sunindextype* index_pointers = RESOLVE_MAT(A)->getRowData(ReSolve::memory::HOST);
@@ -267,10 +333,27 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 
   for (i = 0; i < RESOLVE_NP(A); i++) 
   { 
-    index_pointers[i] = 0; 
+    index_pointers[i] = ZERO; 
   }
   
   (index_pointers)[RESOLVE_NP(A)] = 0;
 
+  SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
+
+  // Sync to device if necessary
+  if (RESOLVE_MEMSPACE(A) != ReSolve::memory::HOST) 
+  { 
+    SUNMatrix_ReSolve_SyncData(A, RESOLVE_MEMSPACE(A));
+  }
+
   return SUN_SUCCESS;
+}
+
+SUNMatrix SUNMatClone_ReSolve(SUNMatrix A)
+{
+  SUNFunctionBegin(A->sunctx);
+  SUNMatrix B = SUNMatrix_ReSolve(RESOLVE_M(A), RESOLVE_N(A), RESOLVE_NNZ(A),
+                                RESOLVE_MEMSPACE(A), A->sunctx);
+  SUNCheckLastErrNull();
+  return (B);
 }

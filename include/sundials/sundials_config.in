@@ -236,6 +236,11 @@
 #cmakedefine SUNDIALS_MAGMA_BACKENDS_CUDA
 #cmakedefine SUNDIALS_MAGMA_BACKENDS_HIP
 
+/* ReSolve backends */
+#cmakedefine SUNDIALS_RESOLVE_BACKENDS_CPU
+#cmakedefine SUNDIALS_RESOLVE_BACKENDS_CUDA
+#cmakedefine SUNDIALS_RESOLVE_BACKENDS_HIP
+
 /* Set if SUNDIALS is built with MPI support, then
  *     #define SUNDIALS_MPI_ENABLED 1
  * otherwise

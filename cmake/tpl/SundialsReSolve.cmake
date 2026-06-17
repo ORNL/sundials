@@ -48,6 +48,7 @@ find_package(ReSolve REQUIRED)
 
 message(STATUS "ReSolve_LIBRARIES:   ${ReSolve_LIBRARIES}")
 message(STATUS "ReSolve_INCLUDE_DIR: ${ReSolve_INCLUDE_DIR}")
+message(STATUS "SUNDIALS_RESOLVE_BACKENDS: ${SUNDIALS_RESOLVE_BACKENDS}")
 
 # -----------------------------------------------------------------------------
 # Section 4: Test the TPL

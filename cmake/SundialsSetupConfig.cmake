@@ -87,6 +87,11 @@ foreach(backend ${SUNDIALS_MAGMA_BACKENDS})
   set(SUNDIALS_MAGMA_BACKENDS_${backend} TRUE)
 endforeach()
 
+# prepare substitution variable(s) SUNDIALS_RESOLVE_BACKENDS_*
+foreach(backend ${SUNDIALS_RESOLVE_BACKENDS})
+  set(SUNDIALS_RESOLVE_BACKENDS_${backend} TRUE)
+endforeach()
+
 # prepare substitution variable SUNDIALS_HAVE_POSIX_TIMERS for sundials_config.h
 if(SUNDIALS_POSIX_TIMERS) # set in SundialsPOSIXTimers.cmake
   set(SUNDIALS_HAVE_POSIX_TIMERS TRUE)
