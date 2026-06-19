@@ -29,13 +29,6 @@
 #include <resolve/matrix/Csr.hpp>              
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
-
-// #if defined(SUNDIALS_MAGMA_BACKENDS_CUDA)
-// #define HAVE_CUBLAS
-// #elif defined(SUNDIALS_MAGMA_BACKENDS_HIP)
-// #define HAVE_HIP
-// #endif
-
 #ifdef __cplusplus /* wrapper to enable C++ usage */
 extern "C" {
 #endif

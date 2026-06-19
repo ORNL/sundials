@@ -34,11 +34,12 @@
 int main(int argc, char* argv[])
 {
   int fails = 0;                   /* counter for test failures  */
-//   sunindextype matrows, matcols;   /* matrix dims                */
   SUNMatrix A;
   sunindextype i, j, k, kstart, kend, N, uband, lband;
   int print_timing, square;
   SUNContext sunctx;
+
+  // Default backend
   std::string hwbackend = "CPU";
 
   if (SUNContext_Create(SUN_COMM_NULL, &sunctx))
@@ -80,7 +81,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  // Row pointers — how many non-zeros before each row
+  // Row pointers
   index_pointers[0] = 0;   // row 0 starts at 0  (2 non-zeros: diag + right)
   index_pointers[1] = 2;   // row 1 starts at 2  (3 non-zeros: left + diag + right)
   index_pointers[2] = 5;   // row 2 starts at 5  (3 non-zeros)
@@ -101,7 +102,6 @@ int main(int argc, char* argv[])
   if (memspace != ReSolve::memory::HOST) 
   { 
     SUNMatrix_ReSolve_SyncData(A, memspace);
-    // SUNMatrix_ReSolve_Print_Array(A);
   }
 
   // Print the matrix

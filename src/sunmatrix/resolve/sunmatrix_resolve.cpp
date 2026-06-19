@@ -23,8 +23,6 @@
 #include <stdlib.h>
 
 // Re::Solve headers
-#include <resolve/matrix/Coo.hpp>
-#include <resolve/matrix/Csc.hpp>
 #include <resolve/matrix/Csr.hpp>
 #include <resolve/matrix/MatrixHandler.hpp>
 #include <resolve/MemoryUtils.hpp>
@@ -63,7 +61,6 @@
  * Constructor
  * -------------------------------------------------------------------------- */
 
-// TODO Add ability to choose format. Currently, constructor assumes CSR format 
 SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
                             ReSolve::memory::MemorySpace memspace, SUNContext sunctx)
 {
