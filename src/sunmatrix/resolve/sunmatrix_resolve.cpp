@@ -51,27 +51,24 @@
 #define ONE  SUN_RCONST(1.0)
 
 // Content accessor macro
-#define RESOLVE_CONTENT(A)      ((SUNMatrixContent_ReSolve)(A)->content)
-#define RESOLVE_MAT(A)          (RESOLVE_CONTENT(A)->mat)
-#define RESOLVE_M(A)            (RESOLVE_CONTENT(A)->M)
-#define RESOLVE_N(A)            (RESOLVE_CONTENT(A)->N)
-#define RESOLVE_NP(A)           (RESOLVE_CONTENT(A)->NP)
-#define RESOLVE_NNZ(A)          (RESOLVE_CONTENT(A)->NNZ)
-#define RESOLVE_MEMSPACE(A)     (RESOLVE_CONTENT(A)->memspace)
-#define RESOLVE_STORAGETYPE(A)  (RESOLVE_CONTENT(A)->storageType)
+#define RESOLVE_CONTENT(A)    ((SUNMatrixContent_ReSolve)(A)->content) // ASSUMES CSR FORMAT DEFAULT
+#define RESOLVE_MAT(A)        (RESOLVE_CONTENT(A)->mat)
+#define RESOLVE_M(A)          (RESOLVE_CONTENT(A)->M)
+#define RESOLVE_N(A)          (RESOLVE_CONTENT(A)->N)
+#define RESOLVE_NP(A)         (RESOLVE_CONTENT(A)->NP)
+#define RESOLVE_NNZ(A)        (RESOLVE_CONTENT(A)->NNZ)
+#define RESOLVE_MEMSPACE(A)   (RESOLVE_CONTENT(A)->memspace)
 
 /* --------------------------------------------------------------------------
  * Constructor
  * -------------------------------------------------------------------------- */
 
 // TODO Add ability to choose format. Currently, constructor assumes CSR format 
-SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz, 
-                            SUNMatrix_ReSolve_StorageType storageType,
+SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
                             ReSolve::memory::MemorySpace memspace, SUNContext sunctx)
 {
   SUNFunctionBegin(sunctx);
   SUNMatrixContent_ReSolve content;
-  sunindextype np = 0;
 
   // Check inputs
   if ((m <= 0) || (n <= 0) || (nnz < 0))
@@ -95,26 +92,7 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   A->ops->clone     = SUNMatClone_ReSolve;
 
   // Create ReSolve matrix
-  ReSolve::matrix::Sparse* mat;
-  switch (storageType)
-  {
-    case SUN_RESOLVE_COO:
-      mat = new ReSolve::matrix::Coo(m, n, nnz);
-      break;
-    case SUN_RESOLVE_CSC:
-      mat = new ReSolve::matrix::Csc(m, n, nnz);
-      np = n;
-      break;
-    case SUN_RESOLVE_CSR:
-      mat = new ReSolve::matrix::Csr(m, n, nnz);
-      np = m;
-      break;
-    default:
-      SUNDIALS_DEBUG_ERROR("Unsupported storage type\n");
-      return NULL;
-  }
-
-  // Allocate data for matrix
+  ReSolve::matrix::Csr* mat = new ReSolve::matrix::Csr(m, n, nnz);
   mat->allocateMatrixData(ReSolve::memory::HOST);
   // Allocate matrix on device if necessary
   if (memspace == ReSolve::memory::DEVICE)
@@ -134,7 +112,7 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   content->M          = m;
   content->N          = n;
   content->NNZ        = nnz;
-  content->NP         = np;
+  content->NP         = m;
   content->mat        = mat;
   content->memspace   = memspace;
 
@@ -153,39 +131,32 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
  * Implementation specific functions
  * -------------------------------------------------------------------------- */
 
-sunindextype SUNMatrix_ReSolve_GetRows(SUNMatrix A)
+sunindextype SUNMatrix_ReSolve_Rows(SUNMatrix A)
 {
   SUNFunctionBegin(A->sunctx);
   SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
   return RESOLVE_M(A);
 }
 
-sunindextype SUNMatrix_ReSolve_GetColumns(SUNMatrix A)
+sunindextype SUNMatrix_ReSolve_Columns(SUNMatrix A)
 {
   SUNFunctionBegin(A->sunctx);
   SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
   return RESOLVE_N(A);
 }
 
-sunindextype SUNMatrix_ReSolve_GetNNZ(SUNMatrix A)
+sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A)
 {
   SUNFunctionBegin(A->sunctx);
   SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
   return RESOLVE_NNZ(A);
 }
 
-sunindextype SUNMatrix_ReSolve_GetNP(SUNMatrix A)
+sunindextype SUNMatrix_ReSolve_NP(SUNMatrix A)
 {
   SUNFunctionBegin(A->sunctx);
   SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
   return RESOLVE_NP(A);
-}
-
-SUNMatrix_ReSolve_StorageType SUNMatrix_ReSolve_GetStorageType(SUNMatrix A)
-{
-  SUNFunctionBegin(A->sunctx);
-  SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
-  return RESOLVE_STORAGETYPE(A);
 }
 
 /**
@@ -193,27 +164,27 @@ SUNMatrix_ReSolve_StorageType SUNMatrix_ReSolve_GetStorageType(SUNMatrix A)
 
  @param[in] A The SUNMatrix object
 */
-sunrealtype* SUNMatrix_ReSolve_GetData(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
   return RESOLVE_MAT(A)->getValues(memspace);
 }
 
 /**
- Get the pointer to the ReSolve matrix row data
+ Get the pointer to the ReSolve matrix offsets array
 
  @param[in] A The SUNMatrix object
 */
-sunindextype* SUNMatrix_ReSolve_GetRowData(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+sunindextype* SUNMatrix_ReSolve_IndexPointers(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
   return RESOLVE_MAT(A)->getRowData(memspace);
 }
 
 /**
- Get the pointer to the ReSolve matrix column data
+ Get the pointer to the ReSolve matrix indices array
 
  @param[in] A The SUNMatrix object
 */
-sunindextype* SUNMatrix_ReSolve_GetColData(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+sunindextype* SUNMatrix_ReSolve_IndexValues(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
   return RESOLVE_MAT(A)->getColData(memspace);
 }
@@ -346,55 +317,26 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 
   sunindextype i;
 
-  // Get pointers to the data, row data and column data arrays on host in ReSolve
+  // Get pointers to the data, indexvalues and indexpointers arrays on host in ReSolve
   sunrealtype* values = RESOLVE_MAT(A)->getValues(ReSolve::memory::HOST);
 
-  sunindextype* row_data = RESOLVE_MAT(A)->getRowData(ReSolve::memory::HOST);
+  sunindextype* index_pointers = RESOLVE_MAT(A)->getRowData(ReSolve::memory::HOST);
 
-  sunindextype* col_data = RESOLVE_MAT(A)->getColData(ReSolve::memory::HOST);
+  sunindextype* index_values = RESOLVE_MAT(A)->getColData(ReSolve::memory::HOST);
   
-  // Zero out the values of these arrays depending on storage type
-  switch (RESOLVE_STORAGETYPE(A))
+  // Zero out the values of these arrays
+  for (i = 0; i < RESOLVE_NNZ(A); i++)
   {
-    case SUN_RESOLVE_COO:
-      for (i = 0; i < RESOLVE_NNZ(A); i++)
-      {
-        values[i]              = ZERO;
-        row_data[i]            = 0;
-        col_data[i]            = 0;
-      }
-      break;
-    case SUN_RESOLVE_CSC:
-      for (i = 0; i < RESOLVE_NNZ(A); i++)
-      {
-        values[i]              = ZERO;
-        row_data[i]        = 0;
-      }
-
-      for (i = 0; i < RESOLVE_NP(A); i++) 
-      { 
-        col_data[i] = ZERO; 
-      }
-
-      (col_data)[RESOLVE_NP(A)] = 0;   
-      break;
-    case SUN_RESOLVE_CSR:
-      for (i = 0; i < RESOLVE_NNZ(A); i++)
-      {
-        values[i]              = ZERO;
-        col_data[i]        = 0;
-      }
-
-      for (i = 0; i < RESOLVE_NP(A); i++) 
-      { 
-        row_data[i] = ZERO; 
-      }
-
-      (row_data)[RESOLVE_NP(A)] = 0;    
-    default:
-      SUNDIALS_DEBUG_ERROR("Unsupported storage type\n");
-      return SUN_ERR_ARG_INCOMPATIBLE;
+    values[i]              = ZERO;
+    index_values[i]        = 0;
   }
+
+  for (i = 0; i < RESOLVE_NP(A); i++) 
+  { 
+    index_pointers[i] = ZERO; 
+  }
+  
+  (index_pointers)[RESOLVE_NP(A)] = 0;
 
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
 
@@ -410,7 +352,7 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 SUNMatrix SUNMatClone_ReSolve(SUNMatrix A)
 {
   SUNFunctionBegin(A->sunctx);
-  SUNMatrix B = SUNMatrix_ReSolve(RESOLVE_M(A), RESOLVE_N(A), RESOLVE_NNZ(A), RESOLVE_STORAGETYPE(A),
+  SUNMatrix B = SUNMatrix_ReSolve(RESOLVE_M(A), RESOLVE_N(A), RESOLVE_NNZ(A),
                                 RESOLVE_MEMSPACE(A), A->sunctx);
   SUNCheckLastErrNull();
   return (B);
