@@ -26,19 +26,22 @@
 #include <stdio.h>
 #include <sundials/sundials_matrix.h>
 #include <sundials/sundials_memory.h>
-#include <resolve/matrix/Csr.hpp>              
+#include <resolve/matrix/Csr.hpp> 
+#include <resolve/matrix/Csc.hpp>         
+#include <resolve/matrix/Coo.hpp>   
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
-
-// #if defined(SUNDIALS_MAGMA_BACKENDS_CUDA)
-// #define HAVE_CUBLAS
-// #elif defined(SUNDIALS_MAGMA_BACKENDS_HIP)
-// #define HAVE_HIP
-// #endif
 
 #ifdef __cplusplus /* wrapper to enable C++ usage */
 extern "C" {
 #endif
+
+typedef enum 
+{
+  SUN_RESOLVE_COO,
+  SUN_RESOLVE_CSC,
+  SUN_RESOLVE_CSR
+} SUNMatrix_ReSolve_StorageType;
 
 struct _SUNMatrixContent_ReSolve
 {
@@ -46,8 +49,9 @@ struct _SUNMatrixContent_ReSolve
   sunindextype N;
   sunindextype NNZ;
   sunindextype NP;
+  SUNMatrix_ReSolve_StorageType storageType;
   ReSolve::memory::MemorySpace memspace;
-  ReSolve::matrix::Csr* mat;
+  ReSolve::matrix::Sparse* mat;
 };
 
 typedef struct _SUNMatrixContent_ReSolve* SUNMatrixContent_ReSolve;
@@ -57,22 +61,25 @@ typedef struct _SUNMatrixContent_ReSolve* SUNMatrixContent_ReSolve;
  * ---------------------------------------*/
 
 SUNDIALS_EXPORT SUNMatrix SUNMatrix_ReSolve(sunindextype M, sunindextype N, sunindextype NNZ,
+                                            SUNMatrix_ReSolve_StorageType storageType,
                                             ReSolve::memory::MemorySpace memspace,
                                             SUNContext sunctx);
 
-SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_Rows(SUNMatrix A);
+SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_GetRows(SUNMatrix A);
 
-SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_Columns(SUNMatrix A);
+SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_GetColumns(SUNMatrix A);
 
-SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A);
+SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_GetNNZ(SUNMatrix A);
 
-SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_NP(SUNMatrix A);                                  
+SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_GetNP(SUNMatrix A);
 
-SUNDIALS_EXPORT sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
+SUNDIALS_EXPORT SUNMatrix_ReSolve_StorageType SUNMatrix_ReSolve_GetStorageType(SUNMatrix A);
 
-SUNDIALS_EXPORT sunindextype* SUNMatrix_ReSolve_IndexValues(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
+SUNDIALS_EXPORT sunrealtype* SUNMatrix_ReSolve_GetData(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
 
-SUNDIALS_EXPORT sunindextype* SUNMatrix_ReSolve_IndexPointers(SUNMatrix A, ReSolve::memory::MemorySpace memspace);    
+SUNDIALS_EXPORT sunindextype* SUNMatrix_ReSolve_GetRowData(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
+
+SUNDIALS_EXPORT sunindextype* SUNMatrix_ReSolve_GetColData(SUNMatrix A, ReSolve::memory::MemorySpace memspace);    
 
 SUNDIALS_EXPORT SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
 

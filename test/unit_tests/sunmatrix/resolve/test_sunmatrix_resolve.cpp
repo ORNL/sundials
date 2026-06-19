@@ -22,9 +22,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sunmatrix/sunmatrix_resolve.h>
+
+// SUNDIALS headers
+#include <sunmatrix/sunmatrix_resolve.h>
+#include <sundials/priv/sundials_errors_impl.h>
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
-#include <sunmatrix/sunmatrix_resolve.h>
+#include "sundials/sundials_errors.h"
+#include "sundials_debug.h"
+#include "sundials_macros.h"
 
 #include "test_sunmatrix.h"
 
@@ -58,17 +65,19 @@ int main(int argc, char* argv[])
     memspace  = ReSolve::memory::DEVICE;
   #endif
 
-  // Create a SUNMatrix_ReSolve object
+  // Create a SUNMatrix_ReSolve CSR matrix
   A = NULL;
-  A = SUNMatrix_ReSolve(5, 5, 13, memspace, sunctx);
+  // Set the storage type
+  SUNMatrix_ReSolve_StorageType storageType = SUN_RESOLVE_CSR;
+  A = SUNMatrix_ReSolve(5, 5, 13, storageType, memspace, sunctx);
 
   // Get pointers to content arrays
-  sunrealtype* data = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
-  sunindextype* index_values = SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
-  sunindextype* index_pointers = SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
+  sunrealtype* data = SUNMatrix_ReSolve_GetData(A, ReSolve::memory::HOST);
+  sunindextype* row_data = SUNMatrix_ReSolve_GetRowData(A, ReSolve::memory::HOST);
+  sunindextype* col_data = SUNMatrix_ReSolve_GetColData(A, ReSolve::memory::HOST);
 
   // Fill the matrix as a 5x5 second difference matrix
-  for (i = 0; i < SUNMatrix_ReSolve_NNZ(A); i++)
+  for (i = 0; i < SUNMatrix_ReSolve_GetNNZ(A); i++)
   {
     if (i % 3 == 0)
     {
@@ -81,19 +90,19 @@ int main(int argc, char* argv[])
   }
 
   // Row pointers — how many non-zeros before each row
-  index_pointers[0] = 0;   // row 0 starts at 0  (2 non-zeros: diag + right)
-  index_pointers[1] = 2;   // row 1 starts at 2  (3 non-zeros: left + diag + right)
-  index_pointers[2] = 5;   // row 2 starts at 5  (3 non-zeros)
-  index_pointers[3] = 8;   // row 3 starts at 8  (3 non-zeros)
-  index_pointers[4] = 11;  // row 4 starts at 11 (2 non-zeros: left + diag)
-  index_pointers[5] = 13;  // total non-zeros
+  row_data[0] = 0;   // row 0 starts at 0  (2 non-zeros: diag + right)
+  row_data[1] = 2;   // row 1 starts at 2  (3 non-zeros: left + diag + right)
+  row_data[2] = 5;   // row 2 starts at 5  (3 non-zeros)
+  row_data[3] = 8;   // row 3 starts at 8  (3 non-zeros)
+  row_data[4] = 11;  // row 4 starts at 11 (2 non-zeros: left + diag)
+  row_data[5] = 13;  // total non-zeros
 
   // Column indices
-  index_values[0]  = 0; index_values[1]  = 1;              // row 0: cols 0, 1
-  index_values[2]  = 0; index_values[3]  = 1; index_values[4]  = 2; // row 1: cols 0, 1, 2
-  index_values[5]  = 1; index_values[6]  = 2; index_values[7]  = 3; // row 2: cols 1, 2, 3
-  index_values[8]  = 2; index_values[9]  = 3; index_values[10] = 4; // row 3: cols 2, 3, 4
-  index_values[11] = 3; index_values[12] = 4;              // row 4: cols 3, 4
+  col_data[0]  = 0; col_data[1]  = 1;              // row 0: cols 0, 1
+  col_data[2]  = 0; col_data[3]  = 1; col_data[4]  = 2; // row 1: cols 0, 1, 2
+  col_data[5]  = 1; col_data[6]  = 2; col_data[7]  = 3; // row 2: cols 1, 2, 3
+  col_data[8]  = 2; col_data[9]  = 3; col_data[10] = 4; // row 3: cols 2, 3, 4
+  col_data[11] = 3; col_data[12] = 4;              // row 4: cols 3, 4
 
   
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
@@ -140,45 +149,53 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
   int failure = 0;
   sunindextype i, A_NP, B_NP, A_nnz, B_nnz;
   sunrealtype *A_data, *B_data;
-  sunindextype *A_index_values, *A_index_pointers, *B_index_values, *B_index_pointers;
+  sunindextype *A_row_data, *A_col_data, *B_row_data, *B_col_data;
 
   // Get pointers to the data, pointer and value arrays
-  A_data = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
-  A_index_values = SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
-  A_index_pointers = SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
+  A_data = SUNMatrix_ReSolve_GetData(A, ReSolve::memory::HOST);
+  A_row_data = SUNMatrix_ReSolve_GetRowData(A, ReSolve::memory::HOST);
+  A_col_data = SUNMatrix_ReSolve_GetColData(A, ReSolve::memory::HOST);
 
-  B_data = SUNMatrix_ReSolve_Data(B, ReSolve::memory::HOST);
-  B_index_values = SUNMatrix_ReSolve_IndexValues(B, ReSolve::memory::HOST);
-  B_index_pointers = SUNMatrix_ReSolve_IndexPointers(B, ReSolve::memory::HOST);
+  B_data = SUNMatrix_ReSolve_GetData(B, ReSolve::memory::HOST);
+  B_row_data = SUNMatrix_ReSolve_GetRowData(B, ReSolve::memory::HOST);
+  B_col_data = SUNMatrix_ReSolve_GetColData(B, ReSolve::memory::HOST);
 
   // Get nnz and np
-  A_nnz = SUNMatrix_ReSolve_NNZ(A);
-  A_NP = SUNMatrix_ReSolve_NP(A);
+  A_nnz = SUNMatrix_ReSolve_GetNNZ(A);
+  A_NP = SUNMatrix_ReSolve_GetNP(A);
 
-  B_nnz = SUNMatrix_ReSolve_NNZ(B);
-  B_NP = SUNMatrix_ReSolve_NP(B);
+  B_nnz = SUNMatrix_ReSolve_GetNNZ(B);
+  B_NP = SUNMatrix_ReSolve_GetNP(B);
 
-  // Check same storage type
+  // Check same storage SUNMatrix Type
   if (SUNMatGetID(A) != SUNMatGetID(B))
   {
-    printf(">>> ERROR: check_matrix: Different storage types (%d vs %d)\n",
+    printf(">>> ERROR: check_matrix: Different SUNMatrix Type (%d vs %d)\n",
            SUNMatGetID(A), SUNMatGetID(B));
     return (1);
   }
 
-  // Check shape
-  if (SUNMatrix_ReSolve_Rows(A) != SUNMatrix_ReSolve_Rows(B))
+  // Check same storage type
+  if (SUNMatrix_ReSolve_GetStorageType(A) != SUNMatrix_ReSolve_GetStorageType(B))
   {
-    printf(">>> ERROR: check_matrix: Different numbers of rows (%ld vs %ld)\n",
-           (long int)SUNMatrix_ReSolve_Rows(A), (long int)SUNMatrix_ReSolve_Rows(B));
+    printf(">>> ERROR: check_matrix: Different Sparse Storage type (%d vs %d)\n",
+           SUNMatrix_ReSolve_GetStorageType(A), SUNMatrix_ReSolve_GetStorageType(B));
     return (1);
   }
-  if (SUNMatrix_ReSolve_Columns(A) != SUNMatrix_ReSolve_Columns(B))
+
+  // Check shape
+  if (SUNMatrix_ReSolve_GetRows(A) != SUNMatrix_ReSolve_GetRows(B))
+  {
+    printf(">>> ERROR: check_matrix: Different numbers of rows (%ld vs %ld)\n",
+           (long int)SUNMatrix_ReSolve_GetRows(A), (long int)SUNMatrix_ReSolve_GetRows(B));
+    return (1);
+  }
+  if (SUNMatrix_ReSolve_GetColumns(A) != SUNMatrix_ReSolve_GetColumns(B))
   {
     printf(">>> ERROR: check_matrix: Different numbers of columns (%ld vs "
            "%ld)\n",
-           (long int)SUNMatrix_ReSolve_Columns(A),
-           (long int)SUNMatrix_ReSolve_Columns(B));
+           (long int)SUNMatrix_ReSolve_GetColumns(A),
+           (long int)SUNMatrix_ReSolve_GetColumns(B));
     return (1);
   }
 
@@ -192,37 +209,119 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
   }
 
   /* compare sparsity patterns */
-  for (i = 0; i < A_NP; i++) 
-  { 
-    failure += (A_index_pointers[i] != B_index_pointers[i]); 
-  }
-
-  if (failure > ZERO)
+  switch (SUNMatrix_ReSolve_GetStorageType(A))
   {
-    printf(">>> ERROR: check_matrix: Different indexptrs \n");
-    return (1);
-  }
+    case SUN_RESOLVE_COO:
+     for (i = 0; i < A_nnz; i++) 
+      { 
+        failure += (A_col_data[i] != B_col_data[i]); 
+      }
 
-  for (i = 0; i < A_nnz; i++) 
-  { 
-    failure += (A_index_values[i] != B_index_values[i]); 
-  }
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different column data \n");
+        return (1);
+      }
 
-  if (failure > ZERO)
-  {
-    printf(">>> ERROR: check_matrix: Different indexvals \n");
-    return (1);
-  }
+      for (i = 0; i < A_nnz; i++) 
+      { 
+        failure += (A_row_data[i] != B_row_data[i]); 
+      }
 
-  /* compare matrix values */
-  for (i = 0; i < A_nnz; i++)
-  {
-    failure += SUNRCompareTol(A_data[i], B_data[i], tol);
-  }
-  if (failure > ZERO)
-  {
-    printf(">>> ERROR: check_matrix: Different entries \n");
-    return (1);
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different row data \n");
+        return (1);
+      }
+
+      /* compare matrix values */
+      for (i = 0; i < A_nnz; i++)
+      {
+        failure += SUNRCompareTol(A_data[i], B_data[i], tol);
+      }
+      
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different entries \n");
+        return (1);
+      }
+      break;
+
+    case SUN_RESOLVE_CSC:
+     for (i = 0; i < A_NP; i++) 
+      { 
+        failure += (A_col_data[i] != B_col_data[i]); 
+      }
+
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different column data \n");
+        return (1);
+      }
+
+      for (i = 0; i < A_nnz; i++) 
+      { 
+        failure += (A_row_data[i] != B_row_data[i]); 
+      }
+
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different row data \n");
+        return (1);
+      }
+
+      /* compare matrix values */
+      for (i = 0; i < A_nnz; i++)
+      {
+        failure += SUNRCompareTol(A_data[i], B_data[i], tol);
+      }
+
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different entries \n");
+        return (1);
+      }
+      break;
+
+    case SUN_RESOLVE_CSR:
+      for (i = 0; i < A_NP; i++) 
+      { 
+        failure += (A_row_data[i] != B_row_data[i]); 
+      }
+
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different indexptrs \n");
+        return (1);
+      }
+
+      for (i = 0; i < A_nnz; i++) 
+      { 
+        failure += (A_col_data[i] != B_col_data[i]); 
+      }
+
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different indexvals \n");
+        return (1);
+      }
+
+      /* compare matrix values */
+      for (i = 0; i < A_nnz; i++)
+      {
+        failure += SUNRCompareTol(A_data[i], B_data[i], tol);
+      }
+
+      if (failure > ZERO)
+      {
+        printf(">>> ERROR: check_matrix: Different entries \n");
+        return (1);
+      }
+      break;
+
+    default:
+      printf(">>> ERROR: Unsupported Storage Type \n");
+      return (1);
   }
 
   return (0);
@@ -232,16 +331,14 @@ int check_matrix_entry(SUNMatrix A, sunrealtype val, sunrealtype tol)
 {
   int failure = 0;
   sunrealtype* Adata;
-  sunindextype* indexptrs;
-  sunindextype i, NP;
+  sunindextype i, nnz;
 
   /* get data pointer */
-  Adata = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
+  Adata = SUNMatrix_ReSolve_GetData(A, ReSolve::memory::HOST);
 
   /* compare data */
-  indexptrs = SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
-  NP        = SUNMatrix_ReSolve_NP(A);
-  for (i = 0; i < indexptrs[NP]; i++)
+  nnz = SUNMatrix_ReSolve_GetNNZ(A);
+  for (i = 0; i < nnz; i++)
   {
     failure += SUNRCompareTol(Adata[i], val, tol);
   }
@@ -256,14 +353,14 @@ int check_vector(N_Vector actual, N_Vector expected, sunrealtype tol)
 }
 sunbooleantype has_data(SUNMatrix A)
 {
-  sunrealtype* Adata = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
+  sunrealtype* Adata = SUNMatrix_ReSolve_GetData(A, ReSolve::memory::HOST);
   if (Adata == NULL) { return SUNFALSE; }
   else { return SUNTRUE; }
 }
 
 sunbooleantype is_square(SUNMatrix A)
 {
-  if (SUNMatrix_ReSolve_Rows(A) == SUNMatrix_ReSolve_Columns(A)) { return SUNTRUE; }
+  if (SUNMatrix_ReSolve_GetRows(A) == SUNMatrix_ReSolve_GetColumns(A)) { return SUNTRUE; }
   else { return SUNFALSE; }
 }
 
