@@ -169,10 +169,11 @@ implementation specific functions:
       * ``SUN_SUCCESS`` if the sync is successful.
       * ``SUN_ERR_ARG_INCOMPATIBLE`` if the given memory space is not updated.
 
-.. cpp:function:: void SUNMatrix_ReSolve_Print(SUNMatrix A)
+.. cpp:function:: void SUNMatrix_ReSolve_Print(SUNMatrix A, std::ostream& out, sunindextype indexing_base)
 
    This function can be used to print the ``SUNMatrix`` object.
 
    **Arguments:**
       * *A* -- a ``SUNMatrix`` object.
-      * *memspace* -- Either ``ReSolve::memory::HOST`` or ``ReSolve::memory::DEVICE``
+      * *out* -- reference specifying where output should be written
+      * *indexing_base* -- value specifying the indexing base

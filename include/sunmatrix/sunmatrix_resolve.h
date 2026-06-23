@@ -38,7 +38,6 @@ struct _SUNMatrixContent_ReSolve
   sunindextype M;
   sunindextype N;
   sunindextype NNZ;
-  sunindextype NP;
   ReSolve::memory::MemorySpace memspace;
   ReSolve::matrix::Csr* mat;
 };
@@ -57,9 +56,7 @@ SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_Rows(SUNMatrix A);
 
 SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_Columns(SUNMatrix A);
 
-SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A);
-
-SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_NP(SUNMatrix A);                                  
+SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A);                              
 
 SUNDIALS_EXPORT sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
 
@@ -71,7 +68,7 @@ SUNDIALS_EXPORT SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A, ReSolve::me
 
 SUNDIALS_EXPORT SUNErrCode SUNMatrix_ReSolve_SyncData(SUNMatrix A, ReSolve::memory::MemorySpace memspace);
 
-SUNDIALS_EXPORT void SUNMatrix_ReSolve_Print(SUNMatrix A);    
+SUNDIALS_EXPORT void SUNMatrix_ReSolve_Print(SUNMatrix A, std::ostream& out, sunindextype indexing_base);    
 
 //SUNDIALS_EXPORT void SUNMatrix_ReSolve_Print_Array(SUNMatrix A);
 

@@ -53,7 +53,6 @@
 #define RESOLVE_MAT(A)        (RESOLVE_CONTENT(A)->mat)
 #define RESOLVE_M(A)          (RESOLVE_CONTENT(A)->M)
 #define RESOLVE_N(A)          (RESOLVE_CONTENT(A)->N)
-#define RESOLVE_NP(A)         (RESOLVE_CONTENT(A)->NP)
 #define RESOLVE_NNZ(A)        (RESOLVE_CONTENT(A)->NNZ)
 #define RESOLVE_MEMSPACE(A)   (RESOLVE_CONTENT(A)->memspace)
 
@@ -109,7 +108,6 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   content->M          = m;
   content->N          = n;
   content->NNZ        = nnz;
-  content->NP         = m;
   content->mat        = mat;
   content->memspace   = memspace;
 
@@ -147,13 +145,6 @@ sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A)
   SUNFunctionBegin(A->sunctx);
   SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
   return RESOLVE_NNZ(A);
-}
-
-sunindextype SUNMatrix_ReSolve_NP(SUNMatrix A)
-{
-  SUNFunctionBegin(A->sunctx);
-  SUNAssertNoRet(SUNMatGetID(A) == SUNMATRIX_RESOLVE, SUN_ERR_ARG_WRONGTYPE);
-  return RESOLVE_NP(A);
 }
 
 /**
@@ -231,9 +222,9 @@ SUNErrCode SUNMatrix_ReSolve_SyncData(SUNMatrix A, ReSolve::memory::MemorySpace 
 /** 
  Print the Re::Solve matrix
 */
-void SUNMatrix_ReSolve_Print(SUNMatrix A)
+void SUNMatrix_ReSolve_Print(SUNMatrix A, std::ostream& out, sunindextype indexing_base)
 {
-  RESOLVE_MAT(A)->print(std::cout, 0);
+  RESOLVE_MAT(A)->print(out, indexing_base);
 }
 
 /**
@@ -328,12 +319,12 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
     index_values[i]        = 0;
   }
 
-  for (i = 0; i < RESOLVE_NP(A); i++) 
+  for (i = 0; i < RESOLVE_M(A); i++) 
   { 
     index_pointers[i] = ZERO; 
   }
   
-  (index_pointers)[RESOLVE_NP(A)] = 0;
+  (index_pointers)[RESOLVE_M(A)] = 0;
 
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
 

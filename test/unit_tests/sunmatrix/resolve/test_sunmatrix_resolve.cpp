@@ -105,24 +105,22 @@ int main(int argc, char* argv[])
   }
 
   // Print the matrix
-  SUNMatrix_ReSolve_Print(A);
+  printf("\n The SUNMatrix object\n");
+  SUNMatrix_ReSolve_Print(A, std::cout, 0);
+  printf("\n");
 
+  std::cout << "Running SUNMatrix generic unit tests\n";
   /* SUNMatrix Tests */
   fails += Test_SUNMatGetID(A, SUNMATRIX_RESOLVE, 0);
   fails += Test_SUNMatZero(A, 0);
 
   if (fails)
   {
-    printf("FAIL: SUNMatrix module failed %i tests \n \n", fails);
+    std::cout << "FAIL: SUNMatrix module failed " << fails << " tests on the " <<hwbackend << " hardware backend\n \n";
     printf("\nA =\n");
-    SUNMatrix_ReSolve_Print(A);
+    SUNMatrix_ReSolve_Print(A, std::cout, 0);
   }
-  else { printf("SUCCESS: SUNMatrix module passed all tests \n \n"); }
-
-  // Print the backend
-  std::cout << "\n Hardware backend: "
-            << hwbackend 
-            << "\n";
+  else { std::cout << "\nSUCCESS: SUNMatrix module passed all tests on the " << hwbackend << " hardware backend\n\n"; }
 
   // Destroy the SUNMatrix_ReSolve object
   SUNMatDestroy_ReSolve(A);
@@ -153,10 +151,10 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
 
   // Get nnz and np
   A_nnz = SUNMatrix_ReSolve_NNZ(A);
-  A_NP = SUNMatrix_ReSolve_NP(A);
+  A_NP = SUNMatrix_ReSolve_Rows(A);
 
   B_nnz = SUNMatrix_ReSolve_NNZ(B);
-  B_NP = SUNMatrix_ReSolve_NP(B);
+  B_NP = SUNMatrix_ReSolve_Rows(B);
 
   // Check same storage type
   if (SUNMatGetID(A) != SUNMatGetID(B))
@@ -240,7 +238,7 @@ int check_matrix_entry(SUNMatrix A, sunrealtype val, sunrealtype tol)
 
   /* compare data */
   indexptrs = SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
-  NP        = SUNMatrix_ReSolve_NP(A);
+  NP        = SUNMatrix_ReSolve_Rows(A);
   for (i = 0; i < indexptrs[NP]; i++)
   {
     failure += SUNRCompareTol(Adata[i], val, tol);
