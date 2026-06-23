@@ -215,8 +215,13 @@ SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A, ReSolve::memory::MemorySpac
 */
 SUNErrCode SUNMatrix_ReSolve_SyncData(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 {
-  RESOLVE_MAT(A)->syncData(memspace);
-  return SUN_SUCCESS;
+  int result = RESOLVE_MAT(A)->syncData(memspace);
+  if (result == 0) {
+    return SUN_SUCCESS;
+  }
+  else {
+    return SUN_ERR_ARG_INCOMPATIBLE;
+  }
 }
 
 /** 
