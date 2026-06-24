@@ -15,19 +15,9 @@
 # SUNDIALS Copyright End
 # ---------------------------------------------------------------
 
-# TODO Add ReSolve Backends for now hardcode cpu
-
 install(
-  CODE "MESSAGE(\"\nInstall SUNMATRIX_RESOLVE with CPU backend(s)\n\")"
+  CODE "MESSAGE(\"\nInstall SUNMATRIX_RESOLVE with ${SUNDIALS_RESOLVE_BACKENDS} backend(s)\n\")"
 )
-
-# if(SUNDIALS_MAGMA_BACKENDS MATCHES "CUDA")
-#   set_source_files_properties(sunmatrix_magmadense.cpp PROPERTIES LANGUAGE CUDA)
-#   set(_libs_needed sundials_nveccuda)
-# elseif(SUNDIALS_MAGMA_BACKENDS MATCHES "HIP")
-#   set_source_files_properties(sunmatrix_magmadense.cpp PROPERTIES LANGUAGE CXX)
-#   set(_libs_needed sundials_nvechip hip::device)
-# endif()
 
 # Add the sunmatrix_resolve library
 sundials_add_library(
@@ -45,5 +35,5 @@ sundials_add_library(
 
 message(
   STATUS
-    "Added SUNMATRIX_RESOLVE module with CPU backend(s)"
+    "Added SUNMATRIX_RESOLVE module with ${SUNDIALS_RESOLVE_BACKENDS} backend(s)"
 )
