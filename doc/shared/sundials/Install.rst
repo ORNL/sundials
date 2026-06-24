@@ -2145,9 +2145,7 @@ header files and libraries).
 
 To enable Re::Solve support, set :cmakeop:`SUNDIALS_ENABLE_RESOLVE` to ``ON``,
 :cmakeop:`ReSolve_DIR` to the root path of a Re::Solve installation, and
-:cmakeop:`SUNDIALS_RESOLVE_BACKENDS` to the desired Re::Solve backend to use. For
-example, the following command will configure SUNDIALS with Re::Solve support with
-the CUDA backend (targeting Pascal GPUs):
+:cmakeop:`SUNDIALS_RESOLVE_BACKENDS` to the desired Re::Solve backend to use.
 
 .. code-block:: bash
 
@@ -2158,8 +2156,9 @@ the CUDA backend (targeting Pascal GPUs):
      -D SUNDIALS_ENABLE_RESOLVE=ON \
      -D ReSolve_DIR=/path/to/resolve/installation \
      -D SUNDIALS_RESOLVE_BACKENDS=CUDA \
-     -D SUNDIALS_ENABLE_CUDA=ON \
-     -D CMAKE_CUDA_ARCHITECTURES="60"
+     -D SUNDIALS_ENABLE_CUDA=ON
+
+Optionally, a specific CUDA architecture can be set using `-D CMAKE_CUDA_ARCHITECTURES="80"`.
 
 .. cmakeoption:: SUNDIALS_ENABLE_RESOLVE
 
@@ -2184,7 +2183,7 @@ the CUDA backend (targeting Pascal GPUs):
 
    Perform Re::Solve compatibility checks
 
-   Default: ``ON``
+   Default: ``OFF``
 
 
 .. _Installation.Options.SuperLU_DIST:
