@@ -232,28 +232,6 @@ void SUNMatrix_ReSolve_Print(SUNMatrix A, std::ostream& out, sunindextype indexi
   RESOLVE_MAT(A)->print(out, indexing_base);
 }
 
-/**
-  Utility function to print an array on the device for debugging
-*/
-// void SUNMatrix_ReSolve_Print_Array(SUNMatrix A)
-// {
-//   if (RESOLVE_MEMSPACE(A) == ReSolve::memory::HOST) {return;}
-
-//   ReSolve::memory::MemorySpace memspace = RESOLVE_MEMSPACE(A);
-//   sunrealtype* d_data = SUNMatrix_ReSolve_Data(A, memspace);
-//   sunrealtype* h_data = new sunrealtype[SUNMatrix_ReSolve_NNZ(A)];
-
-//   cudaMemcpy(h_data, d_data, 
-//            SUNMatrix_ReSolve_NNZ(A) * sizeof(sunrealtype),
-//            cudaMemcpyDeviceToHost);
-
-//   for (int i = 0; i < SUNMatrix_ReSolve_NNZ(A); i++)
-//   {
-//     printf("data[%d] = %f\n", i, h_data[i]);
-//   }
-//   delete[] h_data;
-// }
-
 /* --------------------------------------------------------------------------
  * Implementation of generic SUNMatrix operations.
  * -------------------------------------------------------------------------- */
