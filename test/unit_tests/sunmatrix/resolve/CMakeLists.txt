@@ -12,8 +12,7 @@
 # SUNDIALS Copyright End
 # ------------------------------------------------------------------------------
 
-set(examples_list
-  "test_sunmatrix_resolve.cpp\;\;")
+set(examples_list "test_sunmatrix_resolve.cpp\;\;")
 
 # Add source directory to include directories
 include_directories(..)
@@ -29,23 +28,17 @@ foreach(example_tuple ${examples_list})
 
   if(NOT TARGET ${example_target})
     # example source files
-    sundials_add_executable(
-      ${example_target}
-      ${example}
-      ../test_sunmatrix.c
-      ../test_sunmatrix.h)
+    sundials_add_executable(${example_target} ${example} ../test_sunmatrix.c
+                            ../test_sunmatrix.h)
 
     # folder for IDEs
     set_target_properties(${example_target} PROPERTIES FOLDER "Examples")
 
     # libraries to link against
     target_link_libraries(
-      ${example_target}
-      PRIVATE sundials_core
-              sundials_sunmatrixresolve
-              SUNDIALS::ReSolve
-              ${EXE_EXTRA_LINK_LIBS})
-              
+      ${example_target} PRIVATE sundials_core sundials_sunmatrixresolve
+                                SUNDIALS::ReSolve ${EXE_EXTRA_LINK_LIBS})
+
     # Target GPU backends if necessary
     if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
       target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_CUDA)

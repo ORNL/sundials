@@ -18,26 +18,21 @@
  * SUNMATRIX class using the Re::Solve library
  * ---------------------------------------------------------------------------*/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 
-// Re::Solve headers
-#include <resolve/matrix/Csr.hpp>
-#include <resolve/matrix/MatrixHandler.hpp>
-#include <resolve/MemoryUtils.hpp>
-
 // SUNDIALS headers
-#include <sunmatrix/sunmatrix_resolve.h>
 #include <sundials/priv/sundials_errors_impl.h>
 #include <sundials/sundials_math.h>
+#include <sunmatrix/sunmatrix_resolve.h>
 #include "sundials/sundials_errors.h"
 #include "sundials_debug.h"
 #include "sundials_macros.h"
 
 // Check for a valid precision
 #if defined(SUNDIALS_EXTENDED_PRECISION)
-#error "Re::Solve set precision does not match SUNDIALS precision for floating type"
+#error \
+  "Re::Solve set precision does not match SUNDIALS precision for floating type"
 #endif
 
 #if defined(SUNDIALS_INT64_T)
@@ -49,19 +44,21 @@
 #define ONE  SUN_RCONST(1.0)
 
 // Content accessor macro
-#define RESOLVE_CONTENT(A)    ((SUNMatrixContent_ReSolve)(A)->content) // ASSUMES CSR FORMAT DEFAULT
-#define RESOLVE_MAT(A)        (RESOLVE_CONTENT(A)->mat)
-#define RESOLVE_M(A)          (RESOLVE_CONTENT(A)->M)
-#define RESOLVE_N(A)          (RESOLVE_CONTENT(A)->N)
-#define RESOLVE_NNZ(A)        (RESOLVE_CONTENT(A)->NNZ)
-#define RESOLVE_MEMSPACE(A)   (RESOLVE_CONTENT(A)->memspace)
+#define RESOLVE_CONTENT(A) \
+  ((SUNMatrixContent_ReSolve)(A)->content) // ASSUMES CSR FORMAT DEFAULT
+#define RESOLVE_MAT(A)      (RESOLVE_CONTENT(A)->mat)
+#define RESOLVE_M(A)        (RESOLVE_CONTENT(A)->M)
+#define RESOLVE_N(A)        (RESOLVE_CONTENT(A)->N)
+#define RESOLVE_NNZ(A)      (RESOLVE_CONTENT(A)->NNZ)
+#define RESOLVE_MEMSPACE(A) (RESOLVE_CONTENT(A)->memspace)
 
 /* --------------------------------------------------------------------------
  * Constructor
  * -------------------------------------------------------------------------- */
 
 SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
-                            ReSolve::memory::MemorySpace memspace, SUNContext sunctx)
+                            ReSolve::memory::MemorySpace memspace,
+                            SUNContext sunctx)
 {
   SUNFunctionBegin(sunctx);
   SUNMatrixContent_ReSolve content;
@@ -82,10 +79,10 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   }
 
   // Attach operations
-  A->ops->getid     = SUNMatGetID_ReSolve;
-  A->ops->destroy   = SUNMatDestroy_ReSolve;
-  A->ops->zero      = SUNMatZero_ReSolve;
-  A->ops->clone     = SUNMatClone_ReSolve;
+  A->ops->getid   = SUNMatGetID_ReSolve;
+  A->ops->destroy = SUNMatDestroy_ReSolve;
+  A->ops->zero    = SUNMatZero_ReSolve;
+  A->ops->clone   = SUNMatClone_ReSolve;
 
   // Create ReSolve matrix
   ReSolve::matrix::Csr* mat = new ReSolve::matrix::Csr(m, n, nnz);
@@ -105,12 +102,11 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   A->content = content;
 
   /* Fill content */
-  content->M          = m;
-  content->N          = n;
-  content->NNZ        = nnz;
-  content->mat        = mat;
-  content->memspace   = memspace;
-
+  content->M        = m;
+  content->N        = n;
+  content->NNZ      = nnz;
+  content->mat      = mat;
+  content->memspace = memspace;
 
   if (!(A->content))
   {
@@ -152,7 +148,8 @@ sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A)
 
  @param[in] A The SUNMatrix object
 */
-sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A,
+                                    ReSolve::memory::MemorySpace memspace)
 {
   return RESOLVE_MAT(A)->getValues(memspace);
 }
@@ -162,7 +159,8 @@ sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace me
 
  @param[in] A The SUNMatrix object
 */
-sunindextype* SUNMatrix_ReSolve_IndexPointers(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+sunindextype* SUNMatrix_ReSolve_IndexPointers(SUNMatrix A,
+                                              ReSolve::memory::MemorySpace memspace)
 {
   return RESOLVE_MAT(A)->getRowData(memspace);
 }
@@ -172,7 +170,8 @@ sunindextype* SUNMatrix_ReSolve_IndexPointers(SUNMatrix A, ReSolve::memory::Memo
 
  @param[in] A The SUNMatrix object
 */
-sunindextype* SUNMatrix_ReSolve_IndexValues(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+sunindextype* SUNMatrix_ReSolve_IndexValues(SUNMatrix A,
+                                            ReSolve::memory::MemorySpace memspace)
 {
   return RESOLVE_MAT(A)->getColData(memspace);
 }
@@ -196,7 +195,8 @@ sunindextype* SUNMatrix_ReSolve_IndexValues(SUNMatrix A, ReSolve::memory::Memory
   * @note If you want to set both DEVICE and HOST memory to the same value
   * use syncData function.
 */
-SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A,
+                                        ReSolve::memory::MemorySpace memspace)
 {
   RESOLVE_MAT(A)->setUpdated(memspace);
   return SUN_SUCCESS;
@@ -213,21 +213,19 @@ SUNErrCode SUNMatrix_ReSolve_SetUpdated(SUNMatrix A, ReSolve::memory::MemorySpac
   *
   * @see Sparse::setUpdated in the Re::Solve library
 */
-SUNErrCode SUNMatrix_ReSolve_SyncData(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
+SUNErrCode SUNMatrix_ReSolve_SyncData(SUNMatrix A,
+                                      ReSolve::memory::MemorySpace memspace)
 {
   int result = RESOLVE_MAT(A)->syncData(memspace);
-  if (result == 0) {
-    return SUN_SUCCESS;
-  }
-  else {
-    return SUN_ERR_ARG_INCOMPATIBLE;
-  }
+  if (result == 0) { return SUN_SUCCESS; }
+  else { return SUN_ERR_ARG_INCOMPATIBLE; }
 }
 
 /** 
  Print the Re::Solve matrix
 */
-void SUNMatrix_ReSolve_Print(SUNMatrix A, std::ostream& out, sunindextype indexing_base)
+void SUNMatrix_ReSolve_Print(SUNMatrix A, std::ostream& out,
+                             sunindextype indexing_base)
 {
   RESOLVE_MAT(A)->print(out, indexing_base);
 }
@@ -294,26 +292,23 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
   sunindextype* index_pointers = RESOLVE_MAT(A)->getRowData(ReSolve::memory::HOST);
 
   sunindextype* index_values = RESOLVE_MAT(A)->getColData(ReSolve::memory::HOST);
-  
+
   // Zero out the values of these arrays
   for (i = 0; i < RESOLVE_NNZ(A); i++)
   {
-    values[i]              = ZERO;
-    index_values[i]        = 0;
+    values[i]       = ZERO;
+    index_values[i] = 0;
   }
 
-  for (i = 0; i < RESOLVE_M(A); i++) 
-  { 
-    index_pointers[i] = ZERO; 
-  }
-  
+  for (i = 0; i < RESOLVE_M(A); i++) { index_pointers[i] = ZERO; }
+
   (index_pointers)[RESOLVE_M(A)] = 0;
 
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
 
   // Sync to device if necessary
-  if (RESOLVE_MEMSPACE(A) != ReSolve::memory::HOST) 
-  { 
+  if (RESOLVE_MEMSPACE(A) != ReSolve::memory::HOST)
+  {
     SUNMatrix_ReSolve_SyncData(A, RESOLVE_MEMSPACE(A));
   }
 
@@ -324,7 +319,7 @@ SUNMatrix SUNMatClone_ReSolve(SUNMatrix A)
 {
   SUNFunctionBegin(A->sunctx);
   SUNMatrix B = SUNMatrix_ReSolve(RESOLVE_M(A), RESOLVE_N(A), RESOLVE_NNZ(A),
-                                RESOLVE_MEMSPACE(A), A->sunctx);
+                                  RESOLVE_MEMSPACE(A), A->sunctx);
   SUNCheckLastErrNull();
   return (B);
 }

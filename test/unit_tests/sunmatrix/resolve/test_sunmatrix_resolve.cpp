@@ -33,7 +33,7 @@
  * --------------------------------------------------------------------*/
 int main(int argc, char* argv[])
 {
-  int fails = 0;                   /* counter for test failures  */
+  int fails = 0; /* counter for test failures  */
   SUNMatrix A;
   sunindextype i, j, k, kstart, kend, N, uband, lband;
   int print_timing, square;
@@ -50,14 +50,14 @@ int main(int argc, char* argv[])
 
   // Initialize a ReSolve HOST memory space.
   ReSolve::memory::MemorySpace memspace = ReSolve::memory::HOST;
-  // Check if a GPU backend is enabled
-  #ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
-    hwbackend = "CUDA";
-    memspace  = ReSolve::memory::DEVICE;
-  #elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
-    hwbackend = "HIP";
-    memspace  = ReSolve::memory::DEVICE;
-  #endif
+// Check if a GPU backend is enabled
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  hwbackend = "CUDA";
+  memspace  = ReSolve::memory::DEVICE;
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  hwbackend = "HIP";
+  memspace  = ReSolve::memory::DEVICE;
+#endif
 
   // Create a SUNMatrix_ReSolve object
   A = NULL;
@@ -65,42 +65,45 @@ int main(int argc, char* argv[])
 
   // Get pointers to content arrays
   sunrealtype* data = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
-  sunindextype* index_values = SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
-  sunindextype* index_pointers = SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
+  sunindextype* index_values =
+    SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
+  sunindextype* index_pointers =
+    SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
 
   // Fill the matrix as a 5x5 second difference matrix
   for (i = 0; i < SUNMatrix_ReSolve_NNZ(A); i++)
   {
-    if (i % 3 == 0)
-    {
-      data[i] = 2;
-    }
-    else
-    {
-      data[i] = -1;
-    }
+    if (i % 3 == 0) { data[i] = 2; }
+    else { data[i] = -1; }
   }
 
   // Row pointers
-  index_pointers[0] = 0;   // row 0 starts at 0  (2 non-zeros: diag + right)
-  index_pointers[1] = 2;   // row 1 starts at 2  (3 non-zeros: left + diag + right)
-  index_pointers[2] = 5;   // row 2 starts at 5  (3 non-zeros)
-  index_pointers[3] = 8;   // row 3 starts at 8  (3 non-zeros)
-  index_pointers[4] = 11;  // row 4 starts at 11 (2 non-zeros: left + diag)
-  index_pointers[5] = 13;  // total non-zeros
+  index_pointers[0] = 0; // row 0 starts at 0  (2 non-zeros: diag + right)
+  index_pointers[1] = 2; // row 1 starts at 2  (3 non-zeros: left + diag + right)
+  index_pointers[2] = 5;  // row 2 starts at 5  (3 non-zeros)
+  index_pointers[3] = 8;  // row 3 starts at 8  (3 non-zeros)
+  index_pointers[4] = 11; // row 4 starts at 11 (2 non-zeros: left + diag)
+  index_pointers[5] = 13; // total non-zeros
 
   // Column indices
-  index_values[0]  = 0; index_values[1]  = 1;              // row 0: cols 0, 1
-  index_values[2]  = 0; index_values[3]  = 1; index_values[4]  = 2; // row 1: cols 0, 1, 2
-  index_values[5]  = 1; index_values[6]  = 2; index_values[7]  = 3; // row 2: cols 1, 2, 3
-  index_values[8]  = 2; index_values[9]  = 3; index_values[10] = 4; // row 3: cols 2, 3, 4
-  index_values[11] = 3; index_values[12] = 4;              // row 4: cols 3, 4
+  index_values[0]  = 0;
+  index_values[1]  = 1; // row 0: cols 0, 1
+  index_values[2]  = 0;
+  index_values[3]  = 1;
+  index_values[4]  = 2; // row 1: cols 0, 1, 2
+  index_values[5]  = 1;
+  index_values[6]  = 2;
+  index_values[7]  = 3; // row 2: cols 1, 2, 3
+  index_values[8]  = 2;
+  index_values[9]  = 3;
+  index_values[10] = 4; // row 3: cols 2, 3, 4
+  index_values[11] = 3;
+  index_values[12] = 4; // row 4: cols 3, 4
 
-  
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
   // Sync host to device if necessary
-  if (memspace != ReSolve::memory::HOST) 
-  { 
+  if (memspace != ReSolve::memory::HOST)
+  {
     SUNMatrix_ReSolve_SyncData(A, memspace);
   }
 
@@ -116,11 +119,16 @@ int main(int argc, char* argv[])
 
   if (fails)
   {
-    std::cout << "FAIL: SUNMatrix module failed " << fails << " tests on the " <<hwbackend << " hardware backend\n \n";
+    std::cout << "FAIL: SUNMatrix module failed " << fails << " tests on the "
+              << hwbackend << " hardware backend\n \n";
     printf("\nA =\n");
     SUNMatrix_ReSolve_Print(A, std::cout, 0);
   }
-  else { std::cout << "\nSUCCESS: SUNMatrix module passed all tests on the " << hwbackend << " hardware backend\n\n"; }
+  else
+  {
+    std::cout << "\nSUCCESS: SUNMatrix module passed all tests on the "
+              << hwbackend << " hardware backend\n\n";
+  }
 
   // Destroy the SUNMatrix_ReSolve object
   SUNMatDestroy_ReSolve(A);
@@ -138,23 +146,24 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
   int failure = 0;
   sunindextype i, A_NP, B_NP, A_nnz, B_nnz;
   sunrealtype *A_data, *B_data;
-  sunindextype *A_index_values, *A_index_pointers, *B_index_values, *B_index_pointers;
+  sunindextype *A_index_values, *A_index_pointers, *B_index_values,
+    *B_index_pointers;
 
   // Get pointers to the data, pointer and value arrays
-  A_data = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
-  A_index_values = SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
+  A_data           = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
+  A_index_values   = SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
   A_index_pointers = SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
 
-  B_data = SUNMatrix_ReSolve_Data(B, ReSolve::memory::HOST);
-  B_index_values = SUNMatrix_ReSolve_IndexValues(B, ReSolve::memory::HOST);
+  B_data           = SUNMatrix_ReSolve_Data(B, ReSolve::memory::HOST);
+  B_index_values   = SUNMatrix_ReSolve_IndexValues(B, ReSolve::memory::HOST);
   B_index_pointers = SUNMatrix_ReSolve_IndexPointers(B, ReSolve::memory::HOST);
 
   // Get nnz and np
   A_nnz = SUNMatrix_ReSolve_NNZ(A);
-  A_NP = SUNMatrix_ReSolve_Rows(A);
+  A_NP  = SUNMatrix_ReSolve_Rows(A);
 
   B_nnz = SUNMatrix_ReSolve_NNZ(B);
-  B_NP = SUNMatrix_ReSolve_Rows(B);
+  B_NP  = SUNMatrix_ReSolve_Rows(B);
 
   // Check same storage type
   if (SUNMatGetID(A) != SUNMatGetID(B))
@@ -168,7 +177,8 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
   if (SUNMatrix_ReSolve_Rows(A) != SUNMatrix_ReSolve_Rows(B))
   {
     printf(">>> ERROR: check_matrix: Different numbers of rows (%ld vs %ld)\n",
-           (long int)SUNMatrix_ReSolve_Rows(A), (long int)SUNMatrix_ReSolve_Rows(B));
+           (long int)SUNMatrix_ReSolve_Rows(A),
+           (long int)SUNMatrix_ReSolve_Rows(B));
     return (1);
   }
   if (SUNMatrix_ReSolve_Columns(A) != SUNMatrix_ReSolve_Columns(B))
@@ -190,9 +200,9 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
   }
 
   /* compare sparsity patterns */
-  for (i = 0; i < A_NP; i++) 
-  { 
-    failure += (A_index_pointers[i] != B_index_pointers[i]); 
+  for (i = 0; i < A_NP; i++)
+  {
+    failure += (A_index_pointers[i] != B_index_pointers[i]);
   }
 
   if (failure > ZERO)
@@ -201,9 +211,9 @@ int check_matrix(SUNMatrix A, SUNMatrix B, sunrealtype tol)
     return (1);
   }
 
-  for (i = 0; i < A_nnz; i++) 
-  { 
-    failure += (A_index_values[i] != B_index_values[i]); 
+  for (i = 0; i < A_nnz; i++)
+  {
+    failure += (A_index_values[i] != B_index_values[i]);
   }
 
   if (failure > ZERO)
@@ -252,6 +262,7 @@ int check_vector(N_Vector actual, N_Vector expected, sunrealtype tol)
 {
   return 0;
 }
+
 sunbooleantype has_data(SUNMatrix A)
 {
   sunrealtype* Adata = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
@@ -261,7 +272,10 @@ sunbooleantype has_data(SUNMatrix A)
 
 sunbooleantype is_square(SUNMatrix A)
 {
-  if (SUNMatrix_ReSolve_Rows(A) == SUNMatrix_ReSolve_Columns(A)) { return SUNTRUE; }
+  if (SUNMatrix_ReSolve_Rows(A) == SUNMatrix_ReSolve_Columns(A))
+  {
+    return SUNTRUE;
+  }
   else { return SUNFALSE; }
 }
 

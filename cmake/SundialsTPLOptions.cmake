@@ -568,7 +568,8 @@ sundials_option(
 sundials_option(SUNDIALS_ENABLE_RESOLVE BOOL "Enable ReSolve support" OFF)
 
 sundials_option(
-  SUNDIALS_RESOLVE_BACKENDS STRING
+  SUNDIALS_RESOLVE_BACKENDS
+  STRING
   "Which ReSolve backend to use under the SUNDIALS ReSolve interfaces (CPU, CUDA, HIP)"
   "CPU"
   OPTIONS "CPU;CUDA;HIP"

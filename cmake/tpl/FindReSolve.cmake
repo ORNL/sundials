@@ -59,18 +59,22 @@ if(NOT
 
     # Check for CUDA backend
     if(TARGET ReSolve::CUDA)
-        set(RESOLVE_CUDA_FOUND TRUE CACHE BOOL "ReSolve CUDA backend found")
-        if(NOT TARGET SUNDIALS::ReSolve_CUDA)
-            add_library(SUNDIALS::ReSolve_CUDA ALIAS ReSolve::resolve_backend_cuda)
-        endif()
+      set(RESOLVE_CUDA_FOUND
+          TRUE
+          CACHE BOOL "ReSolve CUDA backend found")
+      if(NOT TARGET SUNDIALS::ReSolve_CUDA)
+        add_library(SUNDIALS::ReSolve_CUDA ALIAS ReSolve::resolve_backend_cuda)
+      endif()
     endif()
 
     # Check for HIP backend
     if(TARGET ReSolve::HIP)
-        set(RESOLVE_HIP_FOUND TRUE CACHE BOOL "ReSolve HIP backend found")
-        if(NOT TARGET SUNDIALS::ReSolve_HIP)
-            add_library(SUNDIALS::ReSolve_HIP ALIAS ReSolve::resolve_backend_hip)
-        endif()
+      set(RESOLVE_HIP_FOUND
+          TRUE
+          CACHE BOOL "ReSolve HIP backend found")
+      if(NOT TARGET SUNDIALS::ReSolve_HIP)
+        add_library(SUNDIALS::ReSolve_HIP ALIAS ReSolve::resolve_backend_hip)
+      endif()
     endif()
     return()
   endif()
