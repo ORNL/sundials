@@ -365,10 +365,10 @@ fi
 # resolve
 # -------
 
-if [ "$SUNDIALS_PRECISION" == "double" ]; then
-    export SUNDIALS_RESOLVE=ON
-    export RESOLVE_ROOT=/opt/view
-else
-    export SUNDIALS_RESOLVE=OFF
-    unset RESOLVE_ROOT
-fi
+# if [ "$SUNDIALS_PRECISION" == "double" ] && [ "$SUNDIALS_INDEX_SIZE" == "32" ]; then
+#     export SUNDIALS_RESOLVE=ON
+#     export RESOLVE_ROOT=/opt/view
+# else
+#     export SUNDIALS_RESOLVE=OFF
+#     unset RESOLVE_ROOT
+# fi
