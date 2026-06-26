@@ -6,6 +6,8 @@
 
 ### New Features and Enhancements
 
+Test
+
 Added the function `SUNLogger_SetQueueAndFlushMsgFns` to allow for user-defined
 functions to queue and flush log messages.
 
