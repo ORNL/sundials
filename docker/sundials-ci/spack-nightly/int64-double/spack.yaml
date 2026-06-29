@@ -20,7 +20,6 @@ spack:
   - superlu-dist+int64 ^parmetis+int64 ^netlib-lapack arch=x86_64 %gcc@9.4.0
   - trilinos+tpetra gotype=long_long arch=x86_64 %gcc@9.4.0
   - xbraid arch=x86_64 %gcc@9.4.0
-  # - resolve~cuda~rocm arch=x86_64 %gcc@9.4.0
   config:
     install_tree: /opt/software
   mirrors:
