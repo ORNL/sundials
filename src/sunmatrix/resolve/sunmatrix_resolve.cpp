@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  * SUNDIALS Copyright End
  * ---------------------------------------------------------------------------
- * This is the implementation file for the dense implementation of the
+ * This is the implementation file for the sparse GPU-enabled implementation of the
  * SUNMATRIX class using the Re::Solve library
  * ---------------------------------------------------------------------------*/
 
