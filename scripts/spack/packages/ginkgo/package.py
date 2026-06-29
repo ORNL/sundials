@@ -4,11 +4,9 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 from spack.package import *
-#import spack.pkg.builtin.ginkgo
+import spack.pkg.builtin.ginkgo
 
-# Import with new spack version
-from spack_repo.builtin.packages.ginkgo.package import Ginkgo as BuiltinGinkgo
 
-class Ginkgo(BuiltinGinkgo):
+class Ginkgo(spack.pkg.builtin.ginkgo.Ginkgo):
     # The version of Spack we are using does not include Ginkgo 1.9.0
     version("1.9.0", commit="20cfd68795f58078898da9890baa311b46845a8b")
