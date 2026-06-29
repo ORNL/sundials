@@ -36,7 +36,7 @@
 #endif
 
 #if defined(SUNDIALS_INT64_T)
-#error "Re::Solve set precision does not match SUNDIALS precision for indices"
+#error "Re::Solve is using 32-bit, while SUNDIALS uses 64-bit precision for matrix indices"
 #endif
 
 // Constants
