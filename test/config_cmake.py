@@ -1172,7 +1172,7 @@ def main():
     add_arg(
         group,
         "--resolve-dir",
-        "RESOLVE_ROOT",
+        "ReSolve_ROOT",
         "ReSolve_DIR",
         None,
         "PATH",
