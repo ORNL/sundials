@@ -23,12 +23,11 @@
 #ifndef _SUNMATRIX_RESOLVE_HPP
 #define _SUNMATRIX_RESOLVE_HPP
 
-#include <resolve/matrix/Csr.hpp>
 #include <iostream>
+#include <resolve/matrix/Csr.hpp>
 #include <stdio.h>
 #include <sundials/sundials_matrix.h>
 #include <sundials/sundials_memory.h>
-
 
 struct _SUNMatrixContent_ReSolve
 {

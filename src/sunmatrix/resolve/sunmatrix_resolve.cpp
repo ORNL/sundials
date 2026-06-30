@@ -31,11 +31,13 @@
 
 // Check for a valid precision
 #if defined(SUNDIALS_EXTENDED_PRECISION)
-#error "Re::Solve set precision does not match SUNDIALS precision for floating type"
+#error \
+  "Re::Solve set precision does not match SUNDIALS precision for floating type"
 #endif
 
 #if defined(SUNDIALS_INT64_T)
-#error "Re::Solve is using 32-bit, while SUNDIALS uses 64-bit precision for matrix indices"
+#error \
+  "Re::Solve is using 32-bit, while SUNDIALS uses 64-bit precision for matrix indices"
 #endif
 
 // Constants
