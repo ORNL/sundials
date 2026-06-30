@@ -23,7 +23,7 @@ install(
 sundials_add_library(
   sundials_sunmatrixresolve
   SOURCES sunmatrix_resolve.cpp
-  HEADERS ${SUNDIALS_SOURCE_DIR}/include/sunmatrix/sunmatrix_resolve.h
+  HEADERS ${SUNDIALS_SOURCE_DIR}/include/sunmatrix/sunmatrix_resolve.hpp
   INCLUDE_SUBDIR sunmatrix
   LINK_LIBRARIES PUBLIC sundials_core
   OBJECT_LIBRARIES

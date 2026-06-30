@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
-#include <sunmatrix/sunmatrix_resolve.h>
+#include <sunmatrix/sunmatrix_resolve.hpp>
 
 #include "test_sunmatrix.h"
 

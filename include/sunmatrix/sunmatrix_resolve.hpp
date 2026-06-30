@@ -20,17 +20,15 @@
  * -----------------------------------------------------------------
  */
 
-#ifndef _SUNMATRIX_RESOLVE_H
-#define _SUNMATRIX_RESOLVE_H
+#ifndef _SUNMATRIX_RESOLVE_HPP
+#define _SUNMATRIX_RESOLVE_HPP
 
 #include <resolve/matrix/Csr.hpp>
+#include <iostream>
 #include <stdio.h>
 #include <sundials/sundials_matrix.h>
 #include <sundials/sundials_memory.h>
 
-#ifdef __cplusplus /* wrapper to enable C++ usage */
-extern "C" {
-#endif
 
 struct _SUNMatrixContent_ReSolve
 {
@@ -88,9 +86,5 @@ static inline SUNMatrix_ID SUNMatGetID_ReSolve(SUNMatrix A)
 SUNDIALS_EXPORT void SUNMatDestroy_ReSolve(SUNMatrix A);
 SUNDIALS_EXPORT SUNErrCode SUNMatZero_ReSolve(SUNMatrix A);
 SUNDIALS_EXPORT SUNMatrix SUNMatClone_ReSolve(SUNMatrix A);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

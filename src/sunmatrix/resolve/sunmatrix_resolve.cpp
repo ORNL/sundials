@@ -24,15 +24,14 @@
 // SUNDIALS headers
 #include <sundials/priv/sundials_errors_impl.h>
 #include <sundials/sundials_math.h>
-#include <sunmatrix/sunmatrix_resolve.h>
+#include <sunmatrix/sunmatrix_resolve.hpp>
 #include "sundials/sundials_errors.h"
 #include "sundials_debug.h"
 #include "sundials_macros.h"
 
 // Check for a valid precision
 #if defined(SUNDIALS_EXTENDED_PRECISION)
-#error \
-  "Re::Solve set precision does not match SUNDIALS precision for floating type"
+#error "Re::Solve set precision does not match SUNDIALS precision for floating type"
 #endif
 
 #if defined(SUNDIALS_INT64_T)
@@ -107,13 +106,6 @@ SUNMatrix SUNMatrix_ReSolve(sunindextype m, sunindextype n, sunindextype nnz,
   content->NNZ      = nnz;
   content->mat      = mat;
   content->memspace = memspace;
-
-  if (!(A->content))
-  {
-    SUNDIALS_DEBUG_ERROR("Content allocation failed\n");
-    SUNMatDestroy(A);
-    return NULL;
-  }
 
   return A;
 }
