@@ -285,17 +285,14 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 
   sunindextype* index_values = RESOLVE_MAT(A)->getColData(ReSolve::memory::HOST);
 
-  // Zero out the values of these arrays
-  for (i = 0; i < RESOLVE_NNZ(A); i++)
-  {
-    values[i]       = ZERO;
-    index_values[i] = 0;
-  }
+  // Zero out the arrays
+  memset(values, 0, RESOLVE_NNZ(A) * sizeof(sunrealtype));
 
-  for (i = 0; i < RESOLVE_M(A); i++) { index_pointers[i] = ZERO; }
+  memset(index_values, 0, RESOLVE_NNZ(A) * sizeof(sunindextype));
 
-  (index_pointers)[RESOLVE_M(A)] = 0;
+  memset(index_pointers, 0, (RESOLVE_M(A) + 1) * sizeof(sunindextype));
 
+  // Set to updated
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
 
   // Sync to device if necessary
