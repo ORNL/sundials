@@ -23,4 +23,5 @@
 .. include:: ../../../shared/sunmatrix/SUNMatrix_Ginkgo.rst
 .. include:: ../../../shared/sunmatrix/SUNMatrix_GinkgoBatch.rst
 .. include:: ../../../shared/sunmatrix/SUNMatrix_KokkosDense.rst
+.. include:: ../../../shared/sunmatrix/SUNMatrix_ReSolve.rst
 .. include:: ../../../shared/sunmatrix/SUNMatrix_Examples.rst

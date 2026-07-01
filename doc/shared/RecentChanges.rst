@@ -5,6 +5,9 @@
 
 **New Features and Enhancements**
 
+Added a interface for the Re::Solve library (https://github.com/ORNL/ReSolve) 
+and the SUNMatrix_ReSolve class to use ReSolve matrices.
+
 Added the function :c:func:`SUNLogger_SetQueueAndFlushMsgFns` to allow for
 user-defined functions to queue and flush log messages.
 

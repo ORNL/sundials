@@ -560,3 +560,29 @@ sundials_option(
   DEPRECATED_NAMES
   KOKKOS_KERNELS_WORKS
   NEGATE_DEPRECATED)
+
+# ---------------------------------------------------------------
+# Enable ReSolve support?
+# ---------------------------------------------------------------
+
+sundials_option(SUNDIALS_ENABLE_RESOLVE BOOL "Enable ReSolve support" OFF)
+
+sundials_option(
+  SUNDIALS_RESOLVE_BACKENDS
+  STRING
+  "Which ReSolve backend to use under the SUNDIALS ReSolve interfaces (CPU, CUDA, HIP)"
+  "CPU"
+  OPTIONS "CPU;CUDA;HIP"
+  DEPENDS_ON SUNDIALS_ENABLE_RESOLVE)
+
+sundials_option(ReSolve_DIR PATH "Path to the root of a ReSolve installation"
+                "${ReSolve_DIR}")
+
+sundials_option(ReSolve_INCLUDE_DIR PATH "ReSolve include directory"
+                "${ReSolve_INCLUDE_DIR}" ADVANCED)
+
+sundials_option(ReSolve_LIBRARY_DIR PATH "ReSolve library directory"
+                "${ReSolve_LIBRARY_DIR}" ADVANCED)
+
+sundials_option(SUNDIALS_ENABLE_RESOLVE_CHECKS BOOL
+                "Enable ReSolve compatibility checks" ON ADVANCED)

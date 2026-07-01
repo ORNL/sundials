@@ -2127,6 +2127,65 @@ the CUDA backend (targeting Ampere GPUs):
 
    Default: ``CUDA``
 
+.. _Installation.Options.ReSolve:
+
+Building with Re\:\:Solve
+^^^^^^^^^^^^^^^^^^^
+
+The `Re\:\:Solve library <https://resolve.readthedocs.io/en/latest/>`__ is a library of 
+GPU-resident linear solvers. It contains iterative and direct solvers designed to run 
+on NVIDIA and AMD GPUs, as well as on CPU devices. The library is
+developed by Oak Ridge National Laboratory and is available from the `Re::Solve GitHub
+repository <https://github.com/ORNL/ReSolve>`__.
+
+When Re::Solve support is enabled, :ref:`Re::Solve sparse SUNMatrix
+<SUNMatrix.ReSolve>` will be built (see section
+:numref:`Installation.LibrariesAndHeaders.Matrix.ReSolve` for the corresponding 
+header files and libraries).
+
+To enable Re::Solve support, set :cmakeop:`SUNDIALS_ENABLE_RESOLVE` to ``ON``,
+:cmakeop:`ReSolve_DIR` to the root path of a Re::Solve installation, and
+:cmakeop:`SUNDIALS_RESOLVE_BACKENDS` to the desired Re::Solve backend to use.
+
+.. code-block:: bash
+
+   cmake \
+     -S SOLVER_DIR \
+     -B BUILD_DIR \
+     -D CMAKE_INSTALL_PREFIX=INSTALL_DIR \
+     -D SUNDIALS_ENABLE_RESOLVE=ON \
+     -D ReSolve_DIR=/path/to/resolve/installation \
+     -D SUNDIALS_RESOLVE_BACKENDS=CUDA \
+     -D SUNDIALS_ENABLE_CUDA=ON
+
+Optionally, a specific CUDA architecture can be set using `-D CMAKE_CUDA_ARCHITECTURES="80"`.
+
+.. cmakeoption:: SUNDIALS_ENABLE_RESOLVE
+
+   Enable Re\:\:Solve support
+
+   Default: ``OFF``
+
+.. cmakeoption:: ReSolve_DIR
+
+   Path to the Re\:\:Solve installation
+
+   Default: None
+
+.. cmakeoption:: SUNDIALS_RESOLVE_BACKENDS
+
+   Which Re\:\:Solve backend to use under the SUNDIALS Re\:\:Solve interface: ``CPU`` ``CUDA`` or
+   ``HIP``
+
+   Default: ``CPU``
+
+.. cmakeoption:: SUNDIALS_ENABLE_RESOLVE_CHECKS
+
+   Perform Re::Solve compatibility checks
+
+   Default: ``OFF``
+
+
 .. _Installation.Options.SuperLU_DIST:
 
 Building with SuperLU_DIST
@@ -3679,6 +3738,25 @@ header file and link to the library given below.
    | Headers      | ``sunmatrix/sunmatrix_onemkldense.h``        |
    +--------------+----------------------------------------------+
    | CMake target | ``SUNDIALS::sunmatrixonemkldense``           |
+   +--------------+----------------------------------------------+
+
+.. _Installation.LibrariesAndHeaders.Matrix.ReSolve:
+
+Re::Solve
+""""""""""""
+
+To use the :ref:`Re\:\:Solve sparse SUNMatrix <SUNMatrix.ReSolve>`, include the
+header file and link to the library given below.
+
+.. table:: The sparse Re::Solve SUNMatrix library, header file, and CMake target
+   :align: center
+
+   +--------------+----------------------------------------------+
+   | Libraries    | ``libsundials_sunmatrixresolve.LIB``         |
+   +--------------+----------------------------------------------+
+   | Headers      | ``sunmatrix/sunmatrix_resolve.h``            |
+   +--------------+----------------------------------------------+
+   | CMake target | ``SUNDIALS::sunmatrixresolve``               |
    +--------------+----------------------------------------------+
 
 .. _Installation.LibrariesAndHeaders.Matrix.Sparse:
