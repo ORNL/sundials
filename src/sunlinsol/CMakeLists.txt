@@ -92,6 +92,10 @@ if(SUNDIALS_ENABLE_SUNLINSOL_ONEMKLDENSE)
   add_subdirectory(onemkldense)
 endif()
 
+if(SUNDIALS_ENABLE_SUNLINSOL_RESOLVE)
+  add_subdirectory(resolve)
+endif()
+
 if(SUNDIALS_ENABLE_SUNLINSOL_SUPERLUDIST)
   add_subdirectory(superludist)
 endif()
