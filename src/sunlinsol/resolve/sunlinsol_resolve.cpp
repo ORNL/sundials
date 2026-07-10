@@ -133,7 +133,7 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
 
 SUNLinearSolver_Type SUNLinSolGetType_ReSolve(SUNLinearSolver S)
 {
-  return (SUNLINEARSOLVER_MATRIX_ITERATIVE);
+  return (SUNLINEARSOLVER_DIRECT);
 }
 
 SUNLinearSolver_ID SUNLinSolGetID_ReSolve(SUNLinearSolver S)
@@ -151,6 +151,8 @@ SUNErrCode SUNLinSolInitialize_ReSolve(SUNLinearSolver S)
 
 int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
 {
+  int status = 0;
+
   /* Check for valid inputs */
 
   if (A == NULL)
@@ -171,16 +173,37 @@ int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
   /* Check if factorization has been done*/
   if (FACTORIZED(S))
   {
-    solver->refactorize();
+    status = solver->refactorize();
+    /* Check if successful */
+    if (status)
+    {
+      LASTFLAG(S) = SUN_ERR_EXT_FAIL;
+      return (LASTFLAG(S));
+    }
   }
   else
   {
-    solver->analyze();
-    solver->factorize();
+    status = solver->analyze();
+    if (status)
+    {
+      LASTFLAG(S) = SUN_ERR_EXT_FAIL;
+      return (LASTFLAG(S));
+    }
+    status = solver->factorize();
+    if (status)
+    {
+      LASTFLAG(S) = SUN_ERR_EXT_FAIL;
+      return (LASTFLAG(S));
+    }
     // Perform setup only if working with GPU
     if (RESOLVE_MEMSPACE(S) != ReSolve::memory::HOST)
     {
-      solver->refactorizationSetup();
+      status = solver->refactorizationSetup();
+      if (status)
+      {
+        LASTFLAG(S) = SUN_ERR_EXT_FAIL;
+        return (LASTFLAG(S));
+      }
     }
     FACTORIZED(S) = SUNTRUE;
   }
@@ -209,7 +232,12 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
 
   /* Get Re::Solve solver */
   auto* solver = reinterpret_cast<ReSolve::SystemSolver*>(RESOLVE_CONTENT(S)->solver);
-  solver->getIterativeSolver().setTol(tol);
+
+  /* Set tolerance if an iterative solver is set */
+  // if (solver->getRefinementMethod() == "fgmres")
+  // {
+  //   solver->getIterativeSolver().setTol(tol);
+  // }
 
   /* Create vector wrappers on stack */
   sunindextype vec_length = N_VGetLocalLength(x);
