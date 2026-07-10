@@ -1,0 +1,31 @@
+
+idaHeat2D_ReSolve: Heat equation, serial example problem for IDA
+          Discretized heat equation on 2D unit square.
+          Zero boundary conditions, polynomial initial conditions.
+          Mesh dimensions: 10 x 10        Total system size: 100
+
+Tolerance parameters:  rtol = 0   atol = 1e-08
+Constraints set to force all solution components >= 0. 
+Linear solver: ReSolve SystemSolver using KLU with FGMRES iterative refinement 
+Using CPU backend
+       difference quotient Jacobian
+IDACalcIC called with input boundary values = 0 
+
+   Output Summary (umax = max-norm of solution) 
+
+  time       umax     k  nst  nni  nje   nre     h       
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
+  0.00   9.75461e-01  0    0    0    2     2   5.15e-10 
+  0.01   8.24056e-01  5   53   64   23    66   5.00e-04 
+  0.02   6.88097e-01  5   68   81   24    83   9.00e-04 
+  0.04   4.70961e-01  5   90  103   24   105   9.00e-04 
+  0.08   2.16312e-01  5  127  144   25   146   1.80e-03 
+  0.16   4.53210e-02  5  171  195   25   197   1.80e-03 
+  0.32   1.98861e-03  5  240  298   26   300   3.65e-03 
+  0.64   3.82486e-06  2  313  431   30   433   5.08e-03 
+  1.28   0.00000e+00  1  348  545   60   547   1.46e-01 
+  2.56   0.00000e+00  1  351  548   63   550   1.17e+00 
+  5.12   0.00000e+00  1  352  549   64   551   2.33e+00 
+ 10.24   0.00000e+00  1  353  550   65   552   4.66e+00 
+
+ netf = 4,   ncfn = 12
