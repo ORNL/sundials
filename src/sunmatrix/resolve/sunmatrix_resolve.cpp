@@ -137,6 +137,16 @@ sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A)
   return RESOLVE_NNZ(A);
 }
 
+ReSolve::memory::MemorySpace SUNMatrix_ReSolve_MemorySpace(SUNMatrix A)
+{
+  return RESOLVE_MEMSPACE(A);
+}
+
+ReSolve::matrix::Csr* SUNMatrix_ReSolve_Matrix(SUNMatrix A)
+{
+  return RESOLVE_MAT(A);
+}
+
 /**
  Get the pointer to the ReSolve matrix data array
 
