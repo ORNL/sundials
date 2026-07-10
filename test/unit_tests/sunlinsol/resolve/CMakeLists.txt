@@ -39,7 +39,7 @@ foreach(example_tuple ${sunlinsols_resolve_examples})
 
   if(NOT TARGET ${example_target})
     # example source files
-    sundials_add_executable(${example_target} ${example} ../test_sunlinsol.c
+    sundials_add_executable(${example_target} ${example}.cpp ../test_sunlinsol.c
                             ../test_sunlinsol.h)
 
     # folder for IDEs
