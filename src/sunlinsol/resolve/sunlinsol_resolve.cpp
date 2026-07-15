@@ -29,6 +29,7 @@
 
 #include <resolve/vector/Vector.hpp>
 #include <resolve/LinSolverIterative.hpp>
+#include <resolve/LinSolverDirect.hpp>
 
 // Check for a valid precision
 #if defined(SUNDIALS_EXTENDED_PRECISION)
@@ -52,6 +53,7 @@
  */
 #define RESOLVE_CONTENT(S)  ((SUNLinearSolverContent_ReSolve)(S->content))
 #define FACTORIZED(S)       (RESOLVE_CONTENT(S)->factorized)
+#define REFACTORIZED(S)       (RESOLVE_CONTENT(S)->factorized)
 #define LASTFLAG(S)         (RESOLVE_CONTENT(S)->last_flag)
 #define RESOLVE_MEMSPACE(S) (RESOLVE_CONTENT(S)->memspace)
 
@@ -133,7 +135,17 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
 
 SUNLinearSolver_Type SUNLinSolGetType_ReSolve(SUNLinearSolver S)
 {
-  return (SUNLINEARSOLVER_DIRECT);
+  auto* solver = reinterpret_cast<ReSolve::SystemSolver*>(RESOLVE_CONTENT(S)->solver);
+  // The SUNLINEARSOLVER_MATRIX_ITERATIVE required methods are not fully implemented yet
+  if (solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
+  {
+   return (SUNLINEARSOLVER_MATRIX_ITERATIVE);
+  }
+  // Otherwise, solve method is KLU
+  else
+  { 
+    return (SUNLINEARSOLVER_DIRECT);
+  }
 }
 
 SUNLinearSolver_ID SUNLinSolGetID_ReSolve(SUNLinearSolver S)
@@ -234,13 +246,13 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
   auto* solver = reinterpret_cast<ReSolve::SystemSolver*>(RESOLVE_CONTENT(S)->solver);
 
   /* Set tolerance if an iterative solver is set */
-  // if (solver->getRefinementMethod() == "fgmres")
-  // {
-  //   solver->getIterativeSolver().setTol(tol);
-  // }
+  if (solver->getRefinementMethod() == "fgmres" || solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
+  {
+    solver->getIterativeSolver().setTol(tol);
+  }
 
   /* Create vector wrappers on stack */
-  sunindextype vec_length = N_VGetLocalLength(x);
+  sunindextype vec_length = SUNMatrix_ReSolve_Columns(A);
   ReSolve::vector::Vector vec_b(vec_length);
   ReSolve::vector::Vector vec_x(vec_length);
   
@@ -250,28 +262,12 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
   /* Allocate to DEVICE if necessary */
   if (RESOLVE_MEMSPACE(S) != ReSolve::memory::HOST)
   {
-    vec_b.setData(N_VGetArrayPointer(b), RESOLVE_MEMSPACE(S));
-    vec_x.setData(N_VGetArrayPointer(x), RESOLVE_MEMSPACE(S));
+    vec_b.setData(N_VGetDeviceArrayPointer(b), RESOLVE_MEMSPACE(S));
+    vec_x.setData(N_VGetDeviceArrayPointer(x), RESOLVE_MEMSPACE(S));
   }
-
-  // // Print b before solve
-  // printf("b[0] = %f, b[1] = %f\n", 
-  //        N_VGetArrayPointer(b)[0], 
-  //        N_VGetArrayPointer(b)[1]);
-  
-  // // Print x before solve
-  // printf("x before[0] = %f\n", N_VGetArrayPointer(x)[0]);
 
   /* Solve for x */
   LASTFLAG(S) = solver->solve(&vec_b, &vec_x);
-
-  // printf("solve status = %d\n", status);
-
-  // // Print x after solve
-  // printf("x after[0] = %f\n", N_VGetArrayPointer(x)[0]);
-  
-  // // Print what vec_x thinks its data is
-  // printf("vec_x data[0] = %f\n", vec_x.getData(ReSolve::memory::HOST)[0]);
 
   return LASTFLAG(S);
 }
