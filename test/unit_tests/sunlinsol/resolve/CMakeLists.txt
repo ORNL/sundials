@@ -54,9 +54,9 @@ foreach(example_tuple ${sunlinsols_resolve_examples})
     
     # Target GPU backends if necessary
     if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
-      target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_CUDA)
+      target_link_libraries(${example_target} PRIVATE sundials_nveccuda SUNDIALS::ReSolve_CUDA)
     elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
-      target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_HIP)
+      target_link_libraries(${example_target} PRIVATE sundials_nvechip SUNDIALS::ReSolve_HIP)
     endif()
   endif()
 

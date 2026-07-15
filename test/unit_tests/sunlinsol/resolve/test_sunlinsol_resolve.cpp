@@ -39,6 +39,15 @@
 
 #include "test_sunlinsol.h"
 
+// GPU Vector Implementations
+#if defined(SUNDIALS_RESOLVE_BACKENDS_CUDA)
+#include <nvector/nvector_cuda.h>
+#include <sunmemory/sunmemory_cuda.h>
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+#include <nvector/nvector_hip.h>
+#include <sunmemory/sunmemory_hip.h>
+#endif
+
 /* ----------------------------------------------------------------------
  * SUNLinSol_ReSolve Linear Solver Testing Routine
  * --------------------------------------------------------------------*/
@@ -125,8 +134,50 @@ int main(int argc, char* argv[])
     return (1);
   }
 
-  /* Create ReSolve SUNMatrix from the Sparse Matrix */
+  // Clone vectors to device if necessary
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_Vector x_d = N_VNew_Cuda(N, sunctx);
+  N_Vector y_d = N_VNew_Cuda(N, sunctx);
+  N_Vector b_d = N_VNew_Cuda(N, sunctx);
 
+  // Get pointers
+  sunrealtype* data_x = N_VGetHostArrayPointer_Cuda(x_d);
+  sunrealtype* data_y = N_VGetHostArrayPointer_Cuda(y_d);
+  sunrealtype* data_b = N_VGetHostArrayPointer_Cuda(b_d);
+
+  // Copy data
+  memcpy(data_x, N_VGetArrayPointer(x), N * sizeof(sunrealtype));
+  memcpy(data_y, N_VGetArrayPointer(y), N * sizeof(sunrealtype));
+  memcpy(data_b, N_VGetArrayPointer(b), N * sizeof(sunrealtype));
+
+  // Copy to device
+  N_VCopyToDevice_Cuda(x_d);
+  N_VCopyToDevice_Cuda(y_d);
+  N_VCopyToDevice_Cuda(b_d);
+
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_Vector x_d = N_VNew_Hip(N, sunctx);
+  N_Vector y_d = N_VNew_Hip(N, sunctx);
+  N_Vector b_d = N_VNew_Hip(N, sunctx);
+
+    // Get pointers
+  sunrealtype* data_x = N_VGetHostArrayPointer_Hip(x_d);
+  sunrealtype* data_y = N_VGetHostArrayPointer_Hip(y_d);
+  sunrealtype* data_b = N_VGetHostArrayPointer_Hip(b_d);
+
+  // Copy data
+  memcpy(data_x, N_VGetArrayPointer(x), N * sizeof(sunrealtype));
+  memcpy(data_y, N_VGetArrayPointer(y), N * sizeof(sunrealtype));
+  memcpy(data_b, N_VGetArrayPointer(b), N * sizeof(sunrealtype));
+
+  // Copy to device
+  N_VCopyToDevice_Hip(x_d);
+  N_VCopyToDevice_Hip(y_d);
+  N_VCopyToDevice_Hip(b_d);
+
+#endif
+
+  /* Create ReSolve SUNMatrix from the Sparse Matrix */
   // Initialize a ReSolve HOST memory space.
   ReSolve::memory::MemorySpace memspace = ReSolve::memory::HOST;
   std::string hwbackend = "CPU";
@@ -199,21 +250,21 @@ int main(int argc, char* argv[])
   /* Run Tests */
   fails += Test_SUNLinSolInitialize(LS, 0);
   fails += Test_SUNLinSolSetup(LS, A, 0);
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  // Force GPU Solve
+  SUNLinSolSetup(LS, A);
+  fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  // Force GPU Solve
+  SUNLinSolSetup(LS, A);
+  fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
+#else
   fails += Test_SUNLinSolSolve(LS, A, x, b, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
-
-  fails += Test_SUNLinSolGetType(LS, SUNLINEARSOLVER_MATRIX_ITERATIVE, 0);
+#endif
+  
+  fails += Test_SUNLinSolGetType(LS, SUNLINEARSOLVER_DIRECT, 0);
   fails += Test_SUNLinSolGetID(LS, SUNLINEARSOLVER_RESOLVE, 0);
   fails += Test_SUNLinSolLastFlag(LS, 0);
-
-  // /* Use zero intial guess */
-  // N_VScale(0, y, x);
-
-  // N_VPrint_Serial(x);
-  // /* Attempt to solve */
-  // fails += SUNLinSolSolve_ReSolve(LS, A, x,
-  //                             b, 1000 * SUN_UNIT_ROUNDOFF);
-
-  // fails += 1;        
 
   /* Print result */
   if (fails)
@@ -240,6 +291,17 @@ int main(int argc, char* argv[])
   N_VDestroy(y);
   N_VDestroy(b);
 
+  /* Free device vectors if necessary */
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VDestroy(x_d);
+  N_VDestroy(y_d);
+  N_VDestroy(b_d);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VDestroy(x_d);
+  N_VDestroy(y_d);
+  N_VDestroy(b_d);
+#endif
+
   SUNContext_Free(&sunctx);
 
   return (fails);
@@ -254,9 +316,23 @@ int check_vector(N_Vector X, N_Vector Y, sunrealtype tol)
   sunindextype i, local_length, maxloc;
   sunrealtype *Xdata, *Ydata, maxerr;
 
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VCopyFromDevice_Cuda(X);
+  N_VCopyFromDevice_Cuda(Y);
+  Xdata        = N_VGetHostArrayPointer_Cuda(X);
+  Ydata        = N_VGetHostArrayPointer_Cuda(Y);
+  local_length = N_VGetLength(X);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VCopyFromDevice_Hip(X);
+  N_VCopyFromDevice_Hip(Y);
+  Xdata        = N_VGetHostArrayPointer_Hip(X);
+  Ydata        = N_VGetHostArrayPointer_Hip(Y);
+  local_length = N_VGetLength(X);
+#else
   Xdata        = N_VGetArrayPointer(X);
   Ydata        = N_VGetArrayPointer(Y);
   local_length = N_VGetLength_Serial(X);
+#endif
 
   /* check vector data */
   for (i = 0; i < local_length; i++)
