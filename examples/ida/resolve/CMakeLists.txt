@@ -55,9 +55,9 @@ foreach(example_tuple ${IDA_examples})
 
   # Target GPU backends if necessary
   if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
-    target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_CUDA)
+    target_link_libraries(${example_target} PRIVATE sundials_nveccuda SUNDIALS::ReSolve_CUDA)
   elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
-    target_link_libraries(${example_target} PRIVATE SUNDIALS::ReSolve_HIP)
+    target_link_libraries(${example_target} PRIVATE sundials_nvechip SUNDIALS::ReSolve_HIP)
   endif()                              
 
   # add example to regression tests
@@ -74,9 +74,9 @@ if(SUNDIALS_ENABLE_EXAMPLES_INSTALL)
 
   set(resolve_other_targets SUNDIALS::ReSolve)
   if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
-    list(APPEND resolve_other_targets SUNDIALS::ReSolve_CUDA)
+    list(APPEND resolve_other_targets sundials_nveccuda SUNDIALS::ReSolve_CUDA)
   elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
-    list(APPEND resolve_other_targets SUNDIALS::ReSolve_HIP)
+    list(APPEND resolve_other_targets sundials_nvechip SUNDIALS::ReSolve_HIP)
   endif()
 
   sundials_install_examples(

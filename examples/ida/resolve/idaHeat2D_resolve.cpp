@@ -56,6 +56,15 @@
 #include <resolve/LinSolverIterative.hpp>
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
+// GPU Vector Implementations
+#if defined(SUNDIALS_RESOLVE_BACKENDS_CUDA)
+#include <nvector/nvector_cuda.h>
+#include <sunmemory/sunmemory_cuda.h>
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+#include <nvector/nvector_hip.h>
+#include <sunmemory/sunmemory_hip.h>
+#endif
+
 /* Problem Constants */
 
 #define NOUT  11
@@ -131,6 +140,29 @@ int main(void)
   if (check_retval(&retval, "SUNContext_Create", 1)) { return 1; }
 
   /* Create vectors uu, up, res, constraints, id. */
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  uu = N_VNew_Cuda(NEQ, ctx);
+  if (check_retval((void*)uu, "N_VNew_Cuda", 0)) { return (1); }
+  up = N_VClone(uu);
+  if (check_retval((void*)up, "N_VNew_Cuda", 0)) { return (1); }
+  res = N_VClone(uu);
+  if (check_retval((void*)res, "N_VNew_Cuda", 0)) { return (1); }
+  constraints = N_VClone(uu);
+  if (check_retval((void*)constraints, "N_VNew_Cuda", 0)) { return (1); }
+  id = N_VClone(uu);
+  if (check_retval((void*)id, "N_VNew_Cuda", 0)) { return (1); }
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  uu = N_VNew_Hip(NEQ, ctx);
+  if (check_retval((void*)uu, "N_VNew_Hip", 0)) { return (1); }
+  up = N_VClone(uu);
+  if (check_retval((void*)up, "N_VNew_Hip", 0)) { return (1); }
+  res = N_VClone(uu);
+  if (check_retval((void*)res, "N_VNew_Hip", 0)) { return (1); }
+  constraints = N_VClone(uu);
+  if (check_retval((void*)constraints, "N_VNew_Hip", 0)) { return (1); }
+  id = N_VClone(uu);
+  if (check_retval((void*)id, "N_VNew_Hip", 0)) { return (1); }
+#else
   uu = N_VNew_Serial(NEQ, ctx);
   if (check_retval((void*)uu, "N_VNew_Serial", 0)) { return (1); }
   up = N_VClone(uu);
@@ -141,6 +173,7 @@ int main(void)
   if (check_retval((void*)constraints, "N_VNew_Serial", 0)) { return (1); }
   id = N_VClone(uu);
   if (check_retval((void*)id, "N_VNew_Serial", 0)) { return (1); }
+#endif
 
   /* Create and load problem data block. */
   data = (UserData)malloc(sizeof *data);
@@ -218,19 +251,13 @@ int main(void)
                                refactor, // refactorization
                                refactor, // triangular solve
                                "none",   // preconditioner (always 'none' here)
-                               "fgmres"); // iterative refinement
+                               "none"); // iterative refinement
 
-  /* Set solver options */
-  solver.getIterativeSolver().setCliParam("restart", "100");
-  solver.getIterativeSolver().setCliParam("tol", "1e-14");
+  // /* Set solver options */
+  // solver.getIterativeSolver().setCliParam("restart", "100");
 
   /* Create ReSolve linear solver */
   LS = SUNLinSol_ReSolve(&solver, A, memspace, ctx);
-
-  // Its possible this step is necessary for the ReSolve interface but all other
-  // linear solvers do not require this SUNLinSolSetup
-  SUNLinSolSetup(LS, A);
-
   if (check_retval((void*)LS, "SUNLinSol_ReSolve", 0)) { return (1); }
 
   /* Attach the matrix and linear solver */
@@ -309,16 +336,31 @@ int heatres(sunrealtype tres, N_Vector uu, N_Vector up, N_Vector resval,
   sunindextype mm, i, j, offset, loc;
   sunrealtype *uv, *upv, *resv, coeff;
   UserData data;
-
+  
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VCopyFromDevice_Cuda(uu);
+  N_VCopyFromDevice_Cuda(up);
+  
+  uv   = N_VGetHostArrayPointer_Cuda(uu);
+  upv  = N_VGetHostArrayPointer_Cuda(up);
+  resv = N_VGetHostArrayPointer_Cuda(resval);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VCopyFromDevice_Hip(uu);
+  N_VCopyFromDevice_Hip(up);
+  
+  uv   = N_VGetHostArrayPointer_Hip(uu);
+  upv  = N_VGetHostArrayPointer_Hip(up);
+  resv = N_VGetHostArrayPointer_Hip(resval);
+#else
   uv   = N_VGetArrayPointer(uu);
   upv  = N_VGetArrayPointer(up);
   resv = N_VGetArrayPointer(resval);
+#endif
 
   data  = (UserData)user_data;
   mm    = data->mm;
   coeff = data->coeff;
 
-  /* Initialize resval to uu, to take care of boundary equations. */
   N_VScale(ZERO, uu, resval);
 
   /* Loop over interior points; set res = up - (central difference). */
@@ -333,6 +375,13 @@ int heatres(sunrealtype tres, N_Vector uu, N_Vector up, N_Vector resval,
     }
   }
 
+  /* Copy to device if necessary */
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VCopyToDevice_Cuda(resval);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VCopyToDevice_Hip(resval);
+#endif
+
   return (0);
 }
 
@@ -344,13 +393,20 @@ int jacHeat3(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
   sunrealtype dx   = ONE / (MGRID - ONE);
   sunrealtype beta = SUN_RCONST(4.0) / (dx * dx) + cj;
 
-  sunindextype* colptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
-  sunindextype* rowvals = SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST);
-  sunrealtype* data     = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
+  SUNMatrix Bt, B;
 
-  ReSolve::memory::MemorySpace memspace = SUNMatrix_ReSolve_MemorySpace(JJ);
+  // Get SUNContext from the ReSolve matrix
+  SUNContext ctx = JJ->sunctx;
 
-  SUNMatZero(JJ);
+  // Create temporary CSC sparse matrix
+  sunindextype NNZ = SUNMatrix_ReSolve_NNZ(JJ);
+  B = SUNSparseMatrix(NEQ, NEQ, NNZ, CSC_MAT, ctx);
+
+  sunindextype* colptrs = SUNSparseMatrix_IndexPointers(B);
+  sunindextype* rowvals = SUNSparseMatrix_IndexValues(B);
+  sunrealtype*  data    = SUNSparseMatrix_Data(B);
+
+  SUNMatZero(B);
 
   /*
    * set up number of elements in each column
@@ -397,8 +453,27 @@ int jacHeat3(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
   data[12]    = ONE;
   rowvals[12] = 8;
 
+  // Transpose CSC to CSR
+  SUNSparseMatrix_ToCSR(B, &Bt);
+
+  // Copy CSR data into ReSolve matrix
+  memcpy(SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST),
+         SUNSparseMatrix_Data(Bt),
+         NNZ * sizeof(sunrealtype));
+  memcpy(SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST),
+         SUNSparseMatrix_IndexPointers(Bt),
+         (NEQ + 1) * sizeof(sunindextype));
+  memcpy(SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST),
+         SUNSparseMatrix_IndexValues(Bt),
+         NNZ * sizeof(sunindextype));
+
+  SUNMatDestroy(B);
+  SUNMatDestroy(Bt);
+
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(JJ, ReSolve::memory::HOST);
+
+  ReSolve::memory::MemorySpace memspace = SUNMatrix_ReSolve_MemorySpace(JJ);
 
   // Sync to device if necessary
   if (memspace != ReSolve::memory::HOST)
@@ -418,14 +493,20 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
   sunrealtype dx   = ONE / (MGRID - ONE);
   sunrealtype beta = SUN_RCONST(4.0) / (dx * dx) + cj;
   int i, j, repeat = 0;
+  SUNMatrix Bt, B;
 
-  sunindextype* colptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
-  sunindextype* rowvals = SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST);
-  sunrealtype* data     = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
+  // Get SUNContext from the ReSolve matrix
+  SUNContext ctx = JJ->sunctx;
 
-  ReSolve::memory::MemorySpace memspace = SUNMatrix_ReSolve_MemorySpace(JJ);
+  // Create temporary CSC sparse matrix
+  sunindextype NNZ = SUNMatrix_ReSolve_NNZ(JJ);
+  B = SUNSparseMatrix(NEQ, NEQ, NNZ, CSC_MAT, ctx);
 
-  SUNMatZero(JJ);
+  sunindextype* colptrs = SUNSparseMatrix_IndexPointers(B);
+  sunindextype* rowvals = SUNSparseMatrix_IndexValues(B);
+  sunrealtype*  data    = SUNSparseMatrix_Data(B);
+
+  SUNMatZero(B);
 
   /*
    *-----------------------------------------------
@@ -764,8 +845,27 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
   }
   rowvals[TOTAL - 1] = MGRID * MGRID - 1;
 
+  // Transpose CSC to CSR
+  SUNSparseMatrix_ToCSR(B, &Bt);
+
+  // Copy CSR data into ReSolve matrix
+  memcpy(SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST),
+         SUNSparseMatrix_Data(Bt),
+         NNZ * sizeof(sunrealtype));
+  memcpy(SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST),
+         SUNSparseMatrix_IndexPointers(Bt),
+         (NEQ + 1) * sizeof(sunindextype));
+  memcpy(SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST),
+         SUNSparseMatrix_IndexValues(Bt),
+         NNZ * sizeof(sunindextype));
+
+  SUNMatDestroy(B);
+  SUNMatDestroy(Bt);
+
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(JJ, ReSolve::memory::HOST);
+
+  ReSolve::memory::MemorySpace memspace = SUNMatrix_ReSolve_MemorySpace(JJ);
 
   // Sync to device if necessary
   if (memspace != ReSolve::memory::HOST)
@@ -795,12 +895,27 @@ static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
   mm  = data->mm;
   mm1 = mm - 1;
 
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  udata  = N_VGetHostArrayPointer_Cuda(uu);
+  updata = N_VGetHostArrayPointer_Cuda(up);
+  iddata = N_VGetHostArrayPointer_Cuda(id);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  udata  = N_VGetHostArrayPointer_Hip(uu);
+  updata = N_VGetHostArrayPointer_Hip(up);
+  iddata = N_VGetHostArrayPointer_Hip(id);
+#else
   udata  = N_VGetArrayPointer(uu);
   updata = N_VGetArrayPointer(up);
   iddata = N_VGetArrayPointer(id);
+#endif
 
   /* Initialize id to 1's. */
   N_VConst(ONE, id);
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VCopyFromDevice_Cuda(id);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VCopyFromDevice_Hip(id);
+#endif
 
   /* Initialize uu on all grid points. */
   for (j = 0; j < mm; j++)
@@ -818,6 +933,17 @@ static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
 
   /* Initialize up vector to 0. */
   N_VConst(ZERO, up);
+
+  /* Copy everything to device first */
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VCopyToDevice_Cuda(uu);
+  N_VCopyToDevice_Cuda(up);
+  N_VCopyToDevice_Cuda(id);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VCopyToDevice_Hip(uu);
+  N_VCopyToDevice_Hip(up);
+  N_VCopyToDevice_Hip(id);
+#endif
 
   /* heatres sets res to negative of ODE RHS values at interior points. */
   heatres(ZERO, uu, up, res, data);
@@ -840,6 +966,17 @@ static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
       }
     }
   }
+
+  /* Sync to device if necessary */
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  N_VCopyToDevice_Cuda(uu);
+  N_VCopyToDevice_Cuda(up);
+  N_VCopyToDevice_Cuda(id);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  N_VCopyToDevice_Hip(uu);
+  N_VCopyToDevice_Hip(up);
+  N_VCopyToDevice_Hip(id);
+#endif
 
   return (0);
 }
@@ -865,9 +1002,9 @@ static void PrintHeader(sunrealtype rtol, sunrealtype atol, std::string hwbacken
 #endif
   printf("Constraints set to force all solution components >= 0. \n");
   // This part should change depending on resolve settings
-  printf("Linear solver: ReSolve SystemSolver using KLU with FGMRES iterative refinement \n");
-  std::cout << "Using " << hwbackend << " backend\n";
+  printf("Linear solver: ReSolve SystemSolver using KLU \n");
   printf("       difference quotient Jacobian\n");
+  std::cout << "\nUsing " << hwbackend << " backend\n\n";
 #if defined(SUNDIALS_EXTENDED_PRECISION)
   printf("IDACalcIC called with input boundary values = %Lg \n", BVAL);
 #elif defined(SUNDIALS_DOUBLE_PRECISION)
