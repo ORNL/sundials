@@ -31,4 +31,5 @@
 .. include:: ../../../shared/sunlinsol/SUNLinSol_Ginkgo.rst
 .. include:: ../../../shared/sunlinsol/SUNLinSol_GinkgoBatch.rst
 .. include:: ../../../shared/sunlinsol/SUNLinSol_KokkosDense.rst
+.. include:: ../../../shared/sunlinsol/SUNLinSol_ReSolve.rst
 .. include:: ../../../shared/sunlinsol/SUNLinSol_Examples.rst
