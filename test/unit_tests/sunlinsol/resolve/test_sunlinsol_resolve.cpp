@@ -239,10 +239,7 @@ int main(int argc, char* argv[])
                                refactor, // refactorization
                                refactor, // triangular solve
                                "none",   // preconditioner (always 'none' here)
-                               "fgmres"); // iterative refinement
-
-  /* Set solver options */
-  solver.getIterativeSolver().setCliParam("restart", "100");
+                               "none"); // iterative refinement
 
   /* Create ReSolve linear solver */
   LS = SUNLinSol_ReSolve(&solver, A, memspace, sunctx);
@@ -251,12 +248,8 @@ int main(int argc, char* argv[])
   fails += Test_SUNLinSolInitialize(LS, 0);
   fails += Test_SUNLinSolSetup(LS, A, 0);
 #ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
-  // Force GPU Solve
-  SUNLinSolSetup(LS, A);
   fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
 #elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
-  // Force GPU Solve
-  SUNLinSolSetup(LS, A);
   fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
 #else
   fails += Test_SUNLinSolSolve(LS, A, x, b, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
