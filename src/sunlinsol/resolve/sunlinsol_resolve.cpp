@@ -27,6 +27,7 @@
 #include "sundials_cli.h"
 #include "sundials_macros.h"
 
+#include <resolve/SystemSolver.hpp>
 #include <resolve/vector/Vector.hpp>
 #include <resolve/LinSolverIterative.hpp>
 #include <resolve/LinSolverDirect.hpp>
@@ -92,6 +93,13 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
     return (NULL);
   }
 
+  /* Currently, if an iterative method is set, return an error */
+  if (solver->getRefinementMethod() == "fgmres" || solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
+  {
+    std::cout << "Iterative methods are not currently supported";
+    return (NULL);
+  }
+
   /* Check compatibility with supplied SUNMatrix */
   if (SUNMatGetID(A) != SUNMATRIX_RESOLVE) { return (NULL); }
 
@@ -143,17 +151,7 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
 
 SUNLinearSolver_Type SUNLinSolGetType_ReSolve(SUNLinearSolver S)
 {
-  auto* solver = reinterpret_cast<ReSolve::SystemSolver*>(RESOLVE_CONTENT(S)->solver);
-  // The SUNLINEARSOLVER_MATRIX_ITERATIVE required methods are not fully implemented yet
-  if (solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
-  {
-   return (SUNLINEARSOLVER_MATRIX_ITERATIVE);
-  }
-  // Otherwise, solve method is KLU
-  else
-  { 
-    return (SUNLINEARSOLVER_DIRECT);
-  }
+  return (SUNLINEARSOLVER_DIRECT);
 }
 
 SUNLinearSolver_ID SUNLinSolGetID_ReSolve(SUNLinearSolver S)

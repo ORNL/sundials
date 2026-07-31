@@ -28,14 +28,17 @@
 #include <sundials/sundials_memory.h>
 #include <sundials/sundials_nvector.h>
 
-#include <resolve/SystemSolver.hpp>
 #include <resolve/MemoryUtils.hpp>
-
-
 
 /* -----------------------------------------------
  * ReSolve implementation of SUNLinearSolver
  * ----------------------------------------------- */
+
+/* Forward Declaration of the SystemSolver class */
+namespace ReSolve 
+{
+  class SystemSolver;
+}
 
 struct _SUNLinearSolverContent_ReSolve
 {
