@@ -35,7 +35,7 @@ shared libraries and ``.a`` for static libraries.
 SUNLinearSolver_ReSolve Description
 ---------------------------------------
 
-The SUNLinearSolver_MagmaDense implementation provides an interface to the SystemSolver class
+The SUNLinearSolver_ReSolve implementation provides an interface to the SystemSolver class
 in the `ReSolve <https://resolve.readthedocs.io/en/latest/sphinx/user_guide/index.html#solver-subroutines>`_
 library. 
 
@@ -48,6 +48,14 @@ In general, when setting up this object the user should:
 
 * Create the appropriate ``LinAlgWorkspace`` object.
 * Set the appropriate solver settings.
+
+To create a ``SystemSolver`` object, the user must provide the following,
+
+* A ReSolve ``LinAlgWorkspace`` object (CPU, CUDA or HIP)
+* A factorization method
+* A refactorization method
+* A preconditioner
+* An iterative method
 
 Below is an example of setting up the ``SystemSolver`` object with the following settings using CUDA:
 
@@ -70,6 +78,28 @@ Below is an example of setting up the ``SystemSolver`` object with the following
                                "cusolverrf", // triangular solve
                                "none",   // preconditioner
                                "fgmres"); // iterative refinement
+
+Following is another example of setting up the ``SystemSolver`` object with the following settings using HIP
+
+* A HIP workspace
+* KLU factorization
+* ``rocsolverrf`` refactorization
+* No preconditioner
+* No iterative refinement
+
+.. code-block:: cpp
+
+  /* Set up the ReSolve workspace*/
+  ReSolve::LinAlgWorkspaceHIP workspace;
+  workspace.initializeHandles();
+
+  /* ReSolve solver instatiation */
+  ReSolve::SystemSolver solver(&workspace,
+                               "klu",    // factorization
+                               "rocsolverrf", // refactorization
+                               "rocsolverrf", // triangular solve
+                               "none",   // preconditioner
+                               "none"); // iterative refinement
 
 More information about setting up this object can be found in the `ReSolve Docs <https://resolve.readthedocs.io/en/latest/sphinx/user_guide/index.html#solver-subroutines>`_.
 
@@ -136,3 +166,4 @@ information:
   has ever been performed
 
 * ``memspace`` - The Re::Solve memory space
+
