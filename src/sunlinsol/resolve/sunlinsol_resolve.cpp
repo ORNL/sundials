@@ -135,7 +135,7 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
   S->content = content;
 
   /* Fill content */
-  content->last_flag = 0;
+  content->last_flag = SUN_SUCCESS;
   content->solver = solver;
   content->factorized = SUNFALSE;
   content->memspace = memspace;
