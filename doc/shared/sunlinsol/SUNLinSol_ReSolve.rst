@@ -23,7 +23,7 @@ The SUNLinSol_ReSolve Module
 The SUNLinearSolver_ReSolve implementation of the ``SUNLinearSolver`` class is
 designed to be used with the SUNMATRIX_RESOLVE matrix, and a CPU or GPU-enabled
 vector. The header file to include when using this module is
-``sunlinsol/sunlinsol_resolve.h``. The installed library to link to is
+``sunlinsol/sunlinsol_resolve.hpp``. The installed library to link to is
 ``libsundials_sunlinsolresolve.lib`` where ``lib`` is typically ``.so`` for
 shared libraries and ``.a`` for static libraries.
 
