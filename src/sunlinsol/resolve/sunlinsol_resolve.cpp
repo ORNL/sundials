@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <sundials/priv/sundials_errors_impl.h>
+#include "sundials_debug.h"
 #include <sundials/sundials_math.h>
 #include <sunlinsol/sunlinsol_resolve.hpp>
 #include <sunmatrix/sunmatrix_resolve.hpp>
@@ -65,6 +66,7 @@
 #define FACTORIZED(S)       (RESOLVE_CONTENT(S)->factorized)
 #define LASTFLAG(S)         (RESOLVE_CONTENT(S)->last_flag)
 #define RESOLVE_MEMSPACE(S) (RESOLVE_CONTENT(S)->memspace)
+#define SOLVER(S)           (RESOLVE_CONTENT(S)->solver)
 
 /*
  * ----------------------------------------------------------------------------
@@ -96,7 +98,7 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
   /* Currently, if an iterative method is set, return an error */
   if (solver->getRefinementMethod() == "fgmres" || solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
   {
-    std::cout << "Iterative methods are not currently supported";
+    SUNDIALS_DEBUG_ERROR("Iterative methods not currently supported\n");
     return (NULL);
   }
 
@@ -186,12 +188,10 @@ int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
     return SUN_ERR_ARG_INCOMPATIBLE;
   }
 
-  /* Get Re::Solve solver */
-  auto* solver = reinterpret_cast<ReSolve::SystemSolver*>(RESOLVE_CONTENT(S)->solver);
   /* Check if factorization has been done*/
   if (FACTORIZED(S))
   {
-    status = solver->refactorize();
+    status = SOLVER(S)->refactorize();
     /* Check if successful */
     if (status)
     {
@@ -201,13 +201,13 @@ int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
   }
   else
   {
-    status = solver->analyze();
+    status = SOLVER(S)->analyze();
     if (status)
     {
       LASTFLAG(S) = SUN_ERR_EXT_FAIL;
       return (LASTFLAG(S));
     }
-    status = solver->factorize();
+    status = SOLVER(S)->factorize();
     if (status)
     {
       LASTFLAG(S) = SUN_ERR_EXT_FAIL;
@@ -216,14 +216,14 @@ int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
     // Perform setup only if working with GPU
     if (RESOLVE_MEMSPACE(S) != ReSolve::memory::HOST)
     {
-      status = solver->refactorizationSetup();
+      status = SOLVER(S)->refactorizationSetup();
       if (status)
       {
         LASTFLAG(S) = SUN_ERR_EXT_FAIL;
         return (LASTFLAG(S));
       }
       // Force a refactorize to work on GPU
-      status = solver->refactorize();
+      status = SOLVER(S)->refactorize();
     }
     FACTORIZED(S) = SUNTRUE;
   }
@@ -250,13 +250,10 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
     return SUN_ERR_ARG_INCOMPATIBLE;
   }
 
-  /* Get Re::Solve solver */
-  auto* solver = reinterpret_cast<ReSolve::SystemSolver*>(RESOLVE_CONTENT(S)->solver);
-
   /* Set tolerance if an iterative solver is set */
-  if (solver->getRefinementMethod() == "fgmres" || solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
+  if (SOLVER(S)->getRefinementMethod() == "fgmres" || SOLVER(S)->getSolveMethod() == "randgmres" || SOLVER(S)->getSolveMethod() == "fgmres")
   {
-    solver->getIterativeSolver().setTol(tol);
+    SOLVER(S)->getIterativeSolver().setTol(tol);
   }
 
   /* Create vector wrappers on stack */
@@ -275,7 +272,7 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
   }
 
   /* Solve for x */
-  LASTFLAG(S) = solver->solve(&vec_b, &vec_x);
+  LASTFLAG(S) = SOLVER(S)->solve(&vec_b, &vec_x);
 
   return LASTFLAG(S);
 }
