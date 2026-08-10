@@ -27,14 +27,14 @@
 #include <stdlib.h>
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
-#include <sunmatrix/sunmatrix_dense.h>
-#include <sunmatrix/sunmatrix_sparse.h>
-#include <sunmatrix/sunmatrix_resolve.hpp>
 #include <sunlinsol/sunlinsol_resolve.hpp>
+#include <sunmatrix/sunmatrix_dense.h>
+#include <sunmatrix/sunmatrix_resolve.hpp>
+#include <sunmatrix/sunmatrix_sparse.h>
 
 // ReSolve headers
-#include <resolve/SystemSolver.hpp>
 #include <resolve/LinSolverIterative.hpp>
+#include <resolve/SystemSolver.hpp>
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
 #include "test_sunlinsol.h"
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
   int fails = 0;      /* counter for test failures  */
   sunindextype N;     /* matrix columns, rows       */
   SUNLinearSolver LS; /* linear solver object       */
-  SUNMatrix A, B, C;     /* test matrices              */
+  SUNMatrix A, B, C;  /* test matrices              */
   N_Vector x, y, b;   /* test vectors               */
   sunrealtype *matdata, *xdata;
   int print_timing;
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
   N_Vector y_d = N_VNew_Hip(N, sunctx);
   N_Vector b_d = N_VNew_Hip(N, sunctx);
 
-    // Get pointers
+  // Get pointers
   sunrealtype* data_x = N_VGetHostArrayPointer_Hip(x_d);
   sunrealtype* data_y = N_VGetHostArrayPointer_Hip(y_d);
   sunrealtype* data_b = N_VGetHostArrayPointer_Hip(b_d);
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
   /* Create ReSolve SUNMatrix from the Sparse Matrix */
   // Initialize a ReSolve HOST memory space.
   ReSolve::memory::MemorySpace memspace = ReSolve::memory::HOST;
-  std::string hwbackend = "CPU";
+  std::string hwbackend                 = "CPU";
 // Check if a GPU backend is enabled
 #ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
   hwbackend = "CUDA";
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 #endif
 
   // Create a SUNMatrix_ReSolve object
-  A = SUNMatrix_ReSolve(N, N,  SUNSparseMatrix_NNZ(B), memspace, sunctx);
+  A = SUNMatrix_ReSolve(N, N, SUNSparseMatrix_NNZ(B), memspace, sunctx);
 
   // Get pointers to content arrays
   sunrealtype* data = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
@@ -201,11 +201,14 @@ int main(int argc, char* argv[])
     SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
 
   // Copy the data in the Sparse matrix pointers to the ReSolve pointers
-  memcpy(data, SUNSparseMatrix_Data(B), SUNSparseMatrix_NNZ(B) * sizeof(sunrealtype));
+  memcpy(data, SUNSparseMatrix_Data(B),
+         SUNSparseMatrix_NNZ(B) * sizeof(sunrealtype));
 
-  memcpy(index_values, SUNSparseMatrix_IndexValues(B), SUNSparseMatrix_NNZ(B) * sizeof(sunindextype));
+  memcpy(index_values, SUNSparseMatrix_IndexValues(B),
+         SUNSparseMatrix_NNZ(B) * sizeof(sunindextype));
 
-  memcpy(index_pointers, SUNSparseMatrix_IndexPointers(B), (N + 1) * sizeof(sunindextype));
+  memcpy(index_pointers, SUNSparseMatrix_IndexPointers(B),
+         (N + 1) * sizeof(sunindextype));
 
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
@@ -233,13 +236,13 @@ int main(int argc, char* argv[])
 #endif
   workspace.initializeHandles();
 
-  /* ReSolve direct solver instatiation */
+  /* ReSolve direct solver instantiation */
   ReSolve::SystemSolver solver(&workspace,
                                "klu",    // factorization
                                refactor, // refactorization
                                refactor, // triangular solve
                                "none",   // preconditioner (always 'none' here)
-                               "none"); // iterative refinement
+                               "none");  // iterative refinement
 
   /* Create ReSolve linear solver */
   LS = SUNLinSol_ReSolve(&solver, A, memspace, sunctx);
@@ -248,13 +251,15 @@ int main(int argc, char* argv[])
   fails += Test_SUNLinSolInitialize(LS, 0);
   fails += Test_SUNLinSolSetup(LS, A, 0);
 #ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
-  fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
+  fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF,
+                               SUNTRUE, 0);
 #elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
-  fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
+  fails += Test_SUNLinSolSolve(LS, A, x_d, b_d, 1000 * SUN_UNIT_ROUNDOFF,
+                               SUNTRUE, 0);
 #else
   fails += Test_SUNLinSolSolve(LS, A, x, b, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
 #endif
-  
+
   fails += Test_SUNLinSolGetType(LS, SUNLINEARSOLVER_DIRECT, 0);
   fails += Test_SUNLinSolGetID(LS, SUNLINEARSOLVER_RESOLVE, 0);
   fails += Test_SUNLinSolLastFlag(LS, 0);
@@ -272,9 +277,10 @@ int main(int argc, char* argv[])
     printf("\nx (computed) =\n");
     N_VPrint_Serial(x);
   }
-  else 
-  { std::cout<< "\nSUCCESS: SUNLinSol module passed all tests on " 
-                  <<  hwbackend << " backend\n\n"; 
+  else
+  {
+    std::cout << "\nSUCCESS: SUNLinSol module passed all tests on " << hwbackend
+              << " backend\n\n";
   }
 
   /* Free solver, matrix and vectors */

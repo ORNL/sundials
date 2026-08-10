@@ -19,9 +19,8 @@
 # examples excluded from 'make test' in releases
 
 # Examples using SUNDIALS ReSolve linear solver
-set(sunlinsols_resolve_examples
-    "test_sunlinsol_resolve\;300 0\;"
-    "test_sunlinsol_resolve\;1000 0\;")
+set(sunlinsols_resolve_examples "test_sunlinsol_resolve\;300 0\;"
+                                "test_sunlinsol_resolve\;1000 0\;")
 
 # Add source directory to include directories
 include_directories(..)
@@ -39,24 +38,30 @@ foreach(example_tuple ${sunlinsols_resolve_examples})
 
   if(NOT TARGET ${example_target})
     # example source files
-    sundials_add_executable(${example_target} ${example}.cpp ../test_sunlinsol.c
-                            ../test_sunlinsol.h)
+    sundials_add_executable(${example_target} ${example}.cpp
+                            ../test_sunlinsol.c ../test_sunlinsol.h)
 
     # folder for IDEs
     set_target_properties(${example_target} PROPERTIES FOLDER "Examples")
 
     # libraries to link against
     target_link_libraries(
-      ${example_target} PRIVATE sundials_nvecserial sundials_sunmatrixdense
-                                sundials_sunlinsolresolve sundials_sunmatrixsparse
-                                sundials_sunmatrixresolve SUNDIALS::ReSolve
-                                ${EXE_EXTRA_LINK_LIBS})
-    
+      ${example_target}
+      PRIVATE sundials_nvecserial
+              sundials_sunmatrixdense
+              sundials_sunlinsolresolve
+              sundials_sunmatrixsparse
+              sundials_sunmatrixresolve
+              SUNDIALS::ReSolve
+              ${EXE_EXTRA_LINK_LIBS})
+
     # Target GPU backends if necessary
     if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
-      target_link_libraries(${example_target} PRIVATE sundials_nveccuda SUNDIALS::ReSolve_CUDA)
+      target_link_libraries(${example_target} PRIVATE sundials_nveccuda
+                                                      SUNDIALS::ReSolve_CUDA)
     elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
-      target_link_libraries(${example_target} PRIVATE sundials_nvechip SUNDIALS::ReSolve_HIP)
+      target_link_libraries(${example_target} PRIVATE sundials_nvechip
+                                                      SUNDIALS::ReSolve_HIP)
     endif()
   endif()
 

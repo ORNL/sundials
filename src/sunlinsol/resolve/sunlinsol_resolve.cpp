@@ -20,18 +20,18 @@
 #include <string.h>
 
 #include <sundials/priv/sundials_errors_impl.h>
-#include "sundials_debug.h"
 #include <sundials/sundials_math.h>
 #include <sunlinsol/sunlinsol_resolve.hpp>
 #include <sunmatrix/sunmatrix_resolve.hpp>
+#include "sundials_debug.h"
 
 #include "sundials_cli.h"
 #include "sundials_macros.h"
 
+#include <resolve/LinSolverDirect.hpp>
+#include <resolve/LinSolverIterative.hpp>
 #include <resolve/SystemSolver.hpp>
 #include <resolve/vector/Vector.hpp>
-#include <resolve/LinSolverIterative.hpp>
-#include <resolve/LinSolverDirect.hpp>
 
 // GPU Vector Implementations
 #if defined(SUNDIALS_RESOLVE_BACKENDS_CUDA)
@@ -52,7 +52,6 @@
 #error \
   "Re::Solve is using 32-bit, while SUNDIALS uses 64-bit precision for matrix indices"
 #endif
-
 
 #define ZERO SUN_RCONST(0.0)
 #define ONE  SUN_RCONST(1.0)
@@ -78,8 +77,9 @@
  * Constructor functions
  */
 
-SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A, 
-                                  ReSolve::memory::MemorySpace memspace, SUNContext sunctx)
+SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
+                                  ReSolve::memory::MemorySpace memspace,
+                                  SUNContext sunctx)
 {
   SUNLinearSolver S;
   SUNLinearSolverContent_ReSolve content;
@@ -90,13 +90,12 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
 
   if (A->ops == NULL) { return (NULL); }
 
-  if ( A->ops->getid == NULL)
-  {
-    return (NULL);
-  }
+  if (A->ops->getid == NULL) { return (NULL); }
 
   /* Currently, if an iterative method is set, return an error */
-  if (solver->getRefinementMethod() == "fgmres" || solver->getSolveMethod() == "randgmres" || solver->getSolveMethod() == "fgmres")
+  if (solver->getRefinementMethod() == "fgmres" ||
+      solver->getSolveMethod() == "randgmres" ||
+      solver->getSolveMethod() == "fgmres")
   {
     SUNDIALS_DEBUG_ERROR("Iterative methods not currently supported\n");
     return (NULL);
@@ -137,10 +136,10 @@ SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
   S->content = content;
 
   /* Fill content */
-  content->last_flag = SUN_SUCCESS;
-  content->solver = solver;
+  content->last_flag  = SUN_SUCCESS;
+  content->solver     = solver;
   content->factorized = SUNFALSE;
-  content->memspace = memspace;
+  content->memspace   = memspace;
 
   return S;
 }
@@ -167,7 +166,6 @@ SUNErrCode SUNLinSolInitialize_ReSolve(SUNLinearSolver S)
   LASTFLAG(S) = SUN_SUCCESS;
   return SUN_SUCCESS;
 }
-
 
 int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
 {
@@ -232,7 +230,7 @@ int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
 }
 
 int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
-                              N_Vector b, sunrealtype tol)
+                           N_Vector b, sunrealtype tol)
 {
   /* Check for valid inputs */
   if (S == NULL) { return SUN_ERR_ARG_CORRUPT; }
@@ -251,7 +249,9 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
   }
 
   /* Set tolerance if an iterative solver is set */
-  if (SOLVER(S)->getRefinementMethod() == "fgmres" || SOLVER(S)->getSolveMethod() == "randgmres" || SOLVER(S)->getSolveMethod() == "fgmres")
+  if (SOLVER(S)->getRefinementMethod() == "fgmres" ||
+      SOLVER(S)->getSolveMethod() == "randgmres" ||
+      SOLVER(S)->getSolveMethod() == "fgmres")
   {
     SOLVER(S)->getIterativeSolver().setTol(tol);
   }
@@ -260,7 +260,7 @@ int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
   sunindextype vec_length = SUNMatrix_ReSolve_Columns(A);
   ReSolve::vector::Vector vec_b(vec_length);
   ReSolve::vector::Vector vec_x(vec_length);
-  
+
   /* Allocate data */
   vec_b.setData(N_VGetArrayPointer(b), ReSolve::memory::HOST);
   vec_x.setData(N_VGetArrayPointer(x), ReSolve::memory::HOST);

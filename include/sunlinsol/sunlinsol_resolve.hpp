@@ -35,9 +35,8 @@
  * ----------------------------------------------- */
 
 /* Forward Declaration of the SystemSolver class */
-namespace ReSolve 
-{
-  class SystemSolver;
+namespace ReSolve {
+class SystemSolver;
 }
 
 struct _SUNLinearSolverContent_ReSolve
@@ -50,17 +49,17 @@ struct _SUNLinearSolverContent_ReSolve
 
 typedef struct _SUNLinearSolverContent_ReSolve* SUNLinearSolverContent_ReSolve;
 
-SUNDIALS_EXPORT SUNLinearSolver SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
-                                                     ReSolve::memory::MemorySpace memspace,
-                                                     SUNContext sunctx);
+SUNDIALS_EXPORT SUNLinearSolver
+SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
+                  ReSolve::memory::MemorySpace memspace, SUNContext sunctx);
 
 SUNDIALS_EXPORT SUNLinearSolver_Type SUNLinSolGetType_ReSolve(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNLinearSolver_ID SUNLinSolGetID_ReSolve(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNErrCode SUNLinSolInitialize_ReSolve(SUNLinearSolver S);
 SUNDIALS_EXPORT int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A);
 SUNDIALS_EXPORT int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A,
-                                              N_Vector x, N_Vector b,
-                                              sunrealtype tol);
+                                           N_Vector x, N_Vector b,
+                                           sunrealtype tol);
 SUNDIALS_EXPORT sunindextype SUNLinSolLastFlag_ReSolve(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNErrCode SUNLinSolFree_ReSolve(SUNLinearSolver S);
 

@@ -71,7 +71,7 @@ Below is an example of setting up the ``SystemSolver`` object with the following
   ReSolve::LinAlgWorkspaceCUDA workspace;
   workspace.initializeHandles();
 
-  /* ReSolve solver instatiation */
+  /* ReSolve solver instantiation */
   ReSolve::SystemSolver solver(&workspace,
                                "klu",    // factorization
                                "cusolverrf", // refactorization
@@ -93,7 +93,7 @@ Following is another example of setting up the ``SystemSolver`` object with the 
   ReSolve::LinAlgWorkspaceHIP workspace;
   workspace.initializeHandles();
 
-  /* ReSolve solver instatiation */
+  /* ReSolve solver instantiation */
   ReSolve::SystemSolver solver(&workspace,
                                "klu",    // factorization
                                "rocsolverrf", // refactorization
