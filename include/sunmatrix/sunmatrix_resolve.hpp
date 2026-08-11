@@ -55,6 +55,10 @@ SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_Columns(SUNMatrix A);
 
 SUNDIALS_EXPORT sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A);
 
+SUNDIALS_EXPORT ReSolve::memory::MemorySpace SUNMatrix_ReSolve_MemorySpace(SUNMatrix A);
+
+SUNDIALS_EXPORT ReSolve::matrix::Csr* SUNMatrix_ReSolve_Matrix(SUNMatrix A);
+
 SUNDIALS_EXPORT sunrealtype* SUNMatrix_ReSolve_Data(
   SUNMatrix A, ReSolve::memory::MemorySpace memspace);
 

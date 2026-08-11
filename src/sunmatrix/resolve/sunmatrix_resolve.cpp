@@ -137,6 +137,16 @@ sunindextype SUNMatrix_ReSolve_NNZ(SUNMatrix A)
   return RESOLVE_NNZ(A);
 }
 
+ReSolve::memory::MemorySpace SUNMatrix_ReSolve_MemorySpace(SUNMatrix A)
+{
+  return RESOLVE_MEMSPACE(A);
+}
+
+ReSolve::matrix::Csr* SUNMatrix_ReSolve_Matrix(SUNMatrix A)
+{
+  return RESOLVE_MAT(A);
+}
+
 /**
  Get the pointer to the ReSolve matrix data array
 
@@ -280,19 +290,11 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 
   sunindextype i;
 
-  // Get pointers to the data, indexvalues and indexpointers arrays on host in ReSolve
+  // Get pointer to the data array on host in ReSolve
   sunrealtype* values = RESOLVE_MAT(A)->getValues(ReSolve::memory::HOST);
-
-  sunindextype* index_pointers = RESOLVE_MAT(A)->getRowData(ReSolve::memory::HOST);
-
-  sunindextype* index_values = RESOLVE_MAT(A)->getColData(ReSolve::memory::HOST);
 
   // Zero out the arrays
   memset(values, 0, RESOLVE_NNZ(A) * sizeof(sunrealtype));
-
-  memset(index_values, 0, RESOLVE_NNZ(A) * sizeof(sunindextype));
-
-  memset(index_pointers, 0, (RESOLVE_M(A) + 1) * sizeof(sunindextype));
 
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
