@@ -43,6 +43,9 @@ if(SUNDIALS_ENABLE_CXX_EXAMPLES)
   if(SUNDIALS_ENABLE_TRILINOS)
     add_subdirectory(trilinos)
   endif()
+  if(SUNDIALS_ENABLE_RESOLVE)
+    add_subdirectory(resolve)
+  endif()
 endif()
 
 # Fortran examples

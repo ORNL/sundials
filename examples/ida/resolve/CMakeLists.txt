@@ -1,0 +1,93 @@
+# ---------------------------------------------------------------
+# Programmer(s): Jeffery Zhang
+# ---------------------------------------------------------------
+# SUNDIALS Copyright Start
+# Copyright (c) 2025-2026, Lawrence Livermore National Security,
+# University of Maryland Baltimore County, and the SUNDIALS contributors.
+# Copyright (c) 2013-2025, Lawrence Livermore National Security
+# and Southern Methodist University.
+# Copyright (c) 2002-2013, Lawrence Livermore National Security.
+# All rights reserved.
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
+# ---------------------------------------------------------------
+# CMakeLists.txt file for IDA ReSolve examples
+# ---------------------------------------------------------------
+
+# Example lists are tuples "name\;type" where the type is 'develop' for examples
+# excluded from 'make test' in releases
+
+# Examples using SUNDIALS linear solvers
+set(IDA_examples "idaHeat2D_resolve.cpp\;develop"
+                 "idaFoodWeb_resolve.cpp\;develop")
+
+# Add CUDA-only example if the CUDA backend is enabled
+if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
+  list(APPEND IDA_examples "idaHeat2D_resolve_cuda.cu\;develop"
+                           "idaFoodWeb_resolve_cuda.cu\;develop")
+endif()
+
+# Add the build and install targets for each IDA example
+foreach(example_tuple ${IDA_examples})
+
+  # parse the example tuple
+  list(GET example_tuple 0 example)
+  list(GET example_tuple 1 example_type)
+
+  # extract the file name without extension
+  get_filename_component(example_target ${example} NAME_WE)
+
+  # add example source files
+  sundials_add_executable(${example_target} ${example})
+
+  set_target_properties(${example_target} PROPERTIES FOLDER "Examples")
+
+  # libraries to link against
+  target_link_libraries(
+    ${example_target} PRIVATE sundials_ida sundials_nvecserial
+                                sundials_sunlinsolresolve
+                                sundials_sunmatrixresolve SUNDIALS::ReSolve
+                              ${EXE_EXTRA_LINK_LIBS} ${OTHER_LIBS})
+
+  # Target GPU backends if necessary
+  if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
+    target_link_libraries(${example_target} PRIVATE sundials_nveccuda SUNDIALS::ReSolve_CUDA)
+#     target_compile_options(${example_target} PRIVATE
+#   $<$<COMPILE_LANGUAGE:CUDA>:-fmad=false>
+# )
+  elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
+    target_link_libraries(${example_target} PRIVATE sundials_nvechip SUNDIALS::ReSolve_HIP)
+  endif()                              
+
+  # add example to regression tests
+  sundials_add_test(
+    ${example_target} ${example_target}
+    ANSWER_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    ANSWER_FILE ${example_target}.out
+    EXAMPLE_TYPE ${example_type})
+
+endforeach(example_tuple ${IDA_examples})
+
+# create Makefile and CMakeLists.txt for examples
+if(SUNDIALS_ENABLE_EXAMPLES_INSTALL)
+
+  set(resolve_other_targets SUNDIALS::ReSolve)
+  if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
+    list(APPEND resolve_other_targets sundials_nveccuda SUNDIALS::ReSolve_CUDA)
+  elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
+    list(APPEND resolve_other_targets sundials_nvechip SUNDIALS::ReSolve_HIP)
+  endif()
+
+  sundials_install_examples(
+    ida IDA_examples
+    CMAKE_TEMPLATE cmakelists_CXX_ex.in
+    MAKE_TEMPLATE makefile_serial_CXX_ex.in
+    SOLVER_LIBRARY sundials_ida
+    SUNDIALS_TARGETS ida nvecserial sunlinsolresolve sunmatrixresolve
+    OTHER_TARGETS ${resolve_other_targets}
+    DESTINATION ida/resolve
+    TEST_INSTALL resolve)
+endif()
