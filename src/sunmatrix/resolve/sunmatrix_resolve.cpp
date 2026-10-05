@@ -290,7 +290,7 @@ SUNErrCode SUNMatZero_ReSolve(SUNMatrix A)
 
   sunindextype i;
 
-  // Get pointer to the data array on host in ReSolve
+  // Get pointer to the data array on host in ReSolve.
   sunrealtype* values = RESOLVE_MAT(A)->getValues(ReSolve::memory::HOST);
 
   // Zero out the arrays
