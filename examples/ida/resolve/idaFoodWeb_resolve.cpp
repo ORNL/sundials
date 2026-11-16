@@ -611,7 +611,7 @@ static void InitUserData(UserData webdata)
 
 /*
  * SetInitialProfiles: works entirely on host arrays, syncs to device
- * at the end. Mirrors the pattern from idaHeat2D_ReSolve.
+ * at the end.
  */
 static void SetInitialProfiles(N_Vector cc, N_Vector cp, N_Vector id,
                                UserData webdata)
