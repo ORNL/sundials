@@ -93,17 +93,17 @@
  * -----------------------------------------------------------------*/
 
 #include <ida/ida.h>
+#include <iostream>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 #include <string.h>
 #include <sundials/sundials_types.h>
-#include <sunmatrix/sunmatrix_resolve.hpp>
 #include <sunlinsol/sunlinsol_resolve.hpp>
+#include <sunmatrix/sunmatrix_resolve.hpp>
 
-#include <resolve/SystemSolver.hpp>
 #include <resolve/LinSolverIterative.hpp>
+#include <resolve/SystemSolver.hpp>
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
 #include <nvector/nvector_cuda.h>
@@ -151,7 +151,8 @@ typedef struct
 {
   sunindextype Neq, ns, np, mx, my;
   sunrealtype dx, dy;
-  sunrealtype cox[NUM_SPECIES], coy[NUM_SPECIES], bcoef[NUM_SPECIES], acoef[NUM_SPECIES][NUM_SPECIES];
+  sunrealtype cox[NUM_SPECIES], coy[NUM_SPECIES], bcoef[NUM_SPECIES],
+    acoef[NUM_SPECIES][NUM_SPECIES];
   N_Vector rates;
 }* UserData;
 
@@ -180,15 +181,15 @@ static int check_retval(void* returnvalue, const char* funcname, int opt);
  */
 
 __device__ sunrealtype dotprod(sunindextype size, const sunrealtype* x1,
-                                const sunrealtype* x2)
+                               const sunrealtype* x2)
 {
   sunrealtype temp = ZERO;
   for (sunindextype i = 0; i < size; i++) { temp += x1[i] * x2[i]; }
   return temp;
 }
 
-__device__ void WebRates(sunrealtype xx, sunrealtype yy,
-                          const sunrealtype* cxy, sunrealtype* ratesxy)
+__device__ void WebRates(sunrealtype xx, sunrealtype yy, const sunrealtype* cxy,
+                         sunrealtype* ratesxy)
 {
   int is;
   sunrealtype fac;
@@ -282,8 +283,8 @@ __global__ void resWebKernel(sunrealtype* resv, const sunrealtype* cpv,
 }
 
 __global__ void jacFoodWebKernel(sunrealtype cj, const sunrealtype* cc_data,
-                                  sunrealtype* data, const sunindextype* rowptrs,
-                                  sunrealtype dx, sunrealtype dy, sunindextype np)
+                                 sunrealtype* data, const sunindextype* rowptrs,
+                                 sunrealtype dx, sunrealtype dy, sunindextype np)
 {
   sunindextype tid = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -298,8 +299,9 @@ __global__ void jacFoodWebKernel(sunrealtype cj, const sunrealtype* cc_data,
     sunbooleantype has_up    = (jy < MY - 1);
 
     const sunrealtype* cxy = cc_data + jx * NUM_SPECIES + jy * NSMX;
-    sunrealtype xx  = jx * dx, yy = jy * dy;
-    sunrealtype fac = ONE + ALPHA * xx * yy + BETA * sin(FOURPI * xx) * sin(FOURPI * yy);
+    sunrealtype xx = jx * dx, yy = jy * dy;
+    sunrealtype fac = ONE + ALPHA * xx * yy +
+                      BETA * sin(FOURPI * xx) * sin(FOURPI * yy);
 
     for (int is = 0; is < NUM_SPECIES; is++)
     {
@@ -313,8 +315,16 @@ __global__ void jacFoodWebKernel(sunrealtype cj, const sunrealtype* cc_data,
 
       sunindextype entry = rowptrs[k];
 
-      if (has_down) { data[entry] = -d_coy[is]; entry++; }
-      if (has_left) { data[entry] = -d_cox[is]; entry++; }
+      if (has_down)
+      {
+        data[entry] = -d_coy[is];
+        entry++;
+      }
+      if (has_left)
+      {
+        data[entry] = -d_cox[is];
+        entry++;
+      }
 
       for (int js = 0; js < NUM_SPECIES; js++)
       {
@@ -323,19 +333,28 @@ __global__ void jacFoodWebKernel(sunrealtype cj, const sunrealtype* cc_data,
         {
           val -= d_bcoef[is] * fac + rowsum;
           sunrealtype diff_diag = SUN_RCONST(2.0) * d_cox[is] +
-                                   SUN_RCONST(2.0) * d_coy[is];
-          if (!has_left)  diff_diag -= d_cox[is];
+                                  SUN_RCONST(2.0) * d_coy[is];
+          if (!has_left) diff_diag -= d_cox[is];
           if (!has_right) diff_diag -= d_cox[is];
-          if (!has_down)  diff_diag -= d_coy[is];
-          if (!has_up)    diff_diag -= d_coy[is];
+          if (!has_down) diff_diag -= d_coy[is];
+          if (!has_up) diff_diag -= d_coy[is];
           val += diff_diag;
           if (is < np) val += cj;
         }
-        data[entry] = val; entry++;
+        data[entry] = val;
+        entry++;
       }
 
-      if (has_right) { data[entry] = -d_cox[is]; entry++; }
-      if (has_up)    { data[entry] = -d_coy[is]; entry++; }
+      if (has_right)
+      {
+        data[entry] = -d_cox[is];
+        entry++;
+      }
+      if (has_up)
+      {
+        data[entry] = -d_coy[is];
+        entry++;
+      }
     }
   }
 }
@@ -407,9 +426,9 @@ int main(void)
        ns*ns per node (self block, full reaction coupling)
      + 2*(mx-1)*my*ns  (left/right diffusion, same-species only)
      + 2*mx*(my-1)*ns  (up/down diffusion, same-species only)    */
-  sunindextype nnz = (sunindextype)MX * MY * NUM_SPECIES * NUM_SPECIES
-                   + 2 * (MX - 1) * MY * NUM_SPECIES
-                   + 2 * MX * (MY - 1) * NUM_SPECIES;
+  sunindextype nnz = (sunindextype)MX * MY * NUM_SPECIES * NUM_SPECIES +
+                     2 * (MX - 1) * MY * NUM_SPECIES +
+                     2 * MX * (MY - 1) * NUM_SPECIES;
 
   A = SUNMatrix_ReSolve(NEQ, NEQ, nnz, memspace, ctx);
   if (check_retval((void*)A, "SUNMatrix_ReSolve", 0)) { return 1; }
@@ -421,13 +440,9 @@ int main(void)
   std::string refactor = "cusolverrf";
   workspace.initializeHandles();
 
-  ReSolve::SystemSolver solver(&workspace,
-                               "klu",
-                               refactor,
-                               refactor,
-                               "none",
+  ReSolve::SystemSolver solver(&workspace, "klu", refactor, refactor, "none",
                                "none");
-                              
+
   LS = SUNLinSol_ReSolve(&solver, A, memspace, ctx);
   if (check_retval((void*)LS, "SUNLinSol_ReSolve", 0)) { return 1; }
 
@@ -509,9 +524,11 @@ static int jacFoodInit(SUNMatrix JJ, UserData webdata)
   sunindextype k, node, is, js, jx, jy, sum = 0, entry = 0;
 
   // Get pointers
-  sunindextype* rowptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
-  sunindextype* colvals = SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST);
-  sunrealtype*  data    = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
+  sunindextype* rowptrs =
+    SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
+  sunindextype* colvals = SUNMatrix_ReSolve_IndexValues(JJ,
+                                                        ReSolve::memory::HOST);
+  sunrealtype* data     = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
 
   rowptrs[0] = 0;
 
@@ -538,35 +555,40 @@ static int jacFoodInit(SUNMatrix JJ, UserData webdata)
     {
       colvals[entry] = node_down * ns + is;
       data[entry]    = ZERO;
-      sum++; entry++;
+      sum++;
+      entry++;
     }
     // left neighbor
     if (has_left)
     {
       colvals[entry] = node_left * ns + is;
       data[entry]    = ZERO;
-      sum++; entry++;
+      sum++;
+      entry++;
     }
     // self block (dense, ns entries)
     for (js = 0; js < ns; js++)
     {
       colvals[entry] = node * ns + js;
       data[entry]    = ZERO;
-      sum++; entry++;
+      sum++;
+      entry++;
     }
     // right neighbor
     if (has_right)
     {
       colvals[entry] = node_right * ns + is;
       data[entry]    = ZERO;
-      sum++; entry++;
+      sum++;
+      entry++;
     }
     // up neighbor
     if (has_up)
     {
       colvals[entry] = node_up * ns + is;
       data[entry]    = ZERO;
-      sum++; entry++;
+      sum++;
+      entry++;
     }
 
     rowptrs[k + 1] = sum;
@@ -585,21 +607,22 @@ static int jacFoodInit(SUNMatrix JJ, UserData webdata)
 }
 
 static int jacFoodWeb(sunrealtype tt, sunrealtype cj, N_Vector cc, N_Vector cp,
-                       N_Vector resvec, SUNMatrix JJ, void* user_data,
-                       N_Vector tempv1, N_Vector tempv2, N_Vector tempv3)
+                      N_Vector resvec, SUNMatrix JJ, void* user_data,
+                      N_Vector tempv1, N_Vector tempv2, N_Vector tempv3)
 {
   UserData webdata = (UserData)user_data;
 
   const sunrealtype* cc_data = N_VGetDeviceArrayPointer_Cuda(cc);
-  sunrealtype* data          = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::DEVICE);
-  sunindextype* rowptrs      = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::DEVICE);
+  sunrealtype* data = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::DEVICE);
+  sunindextype* rowptrs =
+    SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::DEVICE);
 
   unsigned block = 256;
   unsigned grid  = (MX * MY + block - 1) / block;
 
-  jacFoodWebKernel<<<grid, block>>>(cj, cc_data, data, rowptrs,
-                                     webdata->dx, webdata->dy, webdata->np);
-  cudaDeviceSynchronize();   // <-- add this
+  jacFoodWebKernel<<<grid, block>>>(cj, cc_data, data, rowptrs, webdata->dx,
+                                    webdata->dy, webdata->np);
+  cudaDeviceSynchronize(); // <-- add this
   SUNMatrix_ReSolve_SetUpdated(JJ, ReSolve::memory::DEVICE);
   SUNMatrix_ReSolve_SyncData(JJ, ReSolve::memory::HOST);
 
@@ -748,9 +771,7 @@ static void Fweb(sunrealtype tcalc, N_Vector cc, N_Vector crate, UserData webdat
                               webdata->dx, webdata->dy);
 }
 
-
-static void PrintHeader(sunrealtype rtol, sunrealtype atol,
-                        std::string hwbackend)
+static void PrintHeader(sunrealtype rtol, sunrealtype atol, std::string hwbackend)
 {
   printf("\nidaFoodWeb_ReSolve: Predator-prey DAE example for IDA\n\n");
   printf("Number of species ns: %d", NUM_SPECIES);
@@ -792,13 +813,13 @@ static void PrintOutput(void* mem, N_Vector c, sunrealtype t)
   c_tr = IJ_Vptr_h(cv, MX - 1, MY - 1);
 
 #if defined(SUNDIALS_DOUBLE_PRECISION)
-  printf("%8.2e %12.4e %12.4e   | %3ld  %1d %12.4e\n", t, c_bl[0], c_tr[0],
-         nst, kused, hused);
+  printf("%8.2e %12.4e %12.4e   | %3ld  %1d %12.4e\n", t, c_bl[0], c_tr[0], nst,
+         kused, hused);
   for (i = 1; i < NUM_SPECIES; i++)
     printf("         %12.4e %12.4e   |\n", c_bl[i], c_tr[i]);
 #else
-  printf("%8.2e %12.4e %12.4e   | %3ld  %1d %12.4e\n", t, c_bl[0], c_tr[0],
-         nst, kused, hused);
+  printf("%8.2e %12.4e %12.4e   | %3ld  %1d %12.4e\n", t, c_bl[0], c_tr[0], nst,
+         kused, hused);
   for (i = 1; i < NUM_SPECIES; i++)
     printf("         %12.4e %12.4e   |\n", c_bl[i], c_tr[i]);
 #endif

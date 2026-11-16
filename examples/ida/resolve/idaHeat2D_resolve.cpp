@@ -40,20 +40,20 @@
  * IDACalcIC cost statistics only.)
  * -----------------------------------------------------------------*/
 
-#include <ida/ida.h>                        /* prototypes for IDA fcts., consts.    */
+#include <ida/ida.h> /* prototypes for IDA fcts., consts.    */
 #include <math.h>
-#include <nvector/nvector_serial.h>         /* access to serial N_Vector            */
+#include <nvector/nvector_serial.h> /* access to serial N_Vector            */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sundials/sundials_math.h>         /* defs. of SUNRabs, SUNRexp, etc.      */
-#include <sundials/sundials_types.h>        /* defs. of sunrealtype, sunindextype   */
-#include <sunmatrix/sunmatrix_sparse.h>     /* access to sparse SUNMatrix           */
-#include <sunmatrix/sunmatrix_resolve.hpp>  /* access to ReSolve SUNMatrix          */
-#include <sunlinsol/sunlinsol_resolve.hpp>  /* access to ReSolve Linear Solver      */
+#include <sundials/sundials_math.h>  /* defs. of SUNRabs, SUNRexp, etc.      */
+#include <sundials/sundials_types.h> /* defs. of sunrealtype, sunindextype   */
+#include <sunlinsol/sunlinsol_resolve.hpp> /* access to ReSolve Linear Solver      */
+#include <sunmatrix/sunmatrix_resolve.hpp> /* access to ReSolve SUNMatrix          */
+#include <sunmatrix/sunmatrix_sparse.h> /* access to sparse SUNMatrix           */
 
 // ReSolve headers
-#include <resolve/SystemSolver.hpp>       
 #include <resolve/LinSolverIterative.hpp>
+#include <resolve/SystemSolver.hpp>
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
 // GPU Vector Implementations
@@ -105,7 +105,8 @@ int jacHeat3(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
 
 /* Prototypes of private functions */
 
-static void PrintHeader(sunrealtype rtol, sunrealtype atol, std::string hwbackend);
+static void PrintHeader(sunrealtype rtol, sunrealtype atol,
+                        std::string hwbackend);
 static void PrintOutput(void* mem, sunrealtype t, N_Vector u);
 static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
                              N_Vector id, N_Vector res);
@@ -219,7 +220,7 @@ int main(void)
 
   // Initialize a ReSolve HOST memory space.
   ReSolve::memory::MemorySpace memspace = ReSolve::memory::HOST;
-  std::string hwbackend = "CPU";
+  std::string hwbackend                 = "CPU";
   // Check if a GPU backend is enabled
 #ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
   hwbackend = "CUDA";
@@ -230,7 +231,7 @@ int main(void)
 #endif
 
   /* Create ReSolve SUNMatrix for use in linear solves */
-  nnz = MGRID * MGRID + ((MGRID-2)*(MGRID-2)*4);
+  nnz = MGRID * MGRID + ((MGRID - 2) * (MGRID - 2) * 4);
   A   = SUNMatrix_ReSolve(NEQ, NEQ, nnz, memspace, ctx);
   if (check_retval((void*)A, "SUNMatrix_ReSolve", 0)) { return (1); }
 
@@ -251,13 +252,13 @@ int main(void)
 #endif
   workspace.initializeHandles();
 
-  /* ReSolve direct solver instatiation */
+  /* ReSolve direct solver instantiation */
   ReSolve::SystemSolver solver(&workspace,
                                "klu",    // factorization
                                refactor, // refactorization
                                refactor, // triangular solve
                                "none",   // preconditioner (always 'none' here)
-                               "none"); // iterative refinement                      
+                               "none");  // iterative refinement
 
   /* Create ReSolve linear solver */
   LS = SUNLinSol_ReSolve(&solver, A, memspace, ctx);
@@ -281,7 +282,7 @@ int main(void)
   /* Call IDACalcIC to correct the initial values. */
 
   retval = IDACalcIC(mem, IDA_YA_YDP_INIT, t1);
-  if (check_retval(&retval, "IDACalcIC", 1)) { return (1); }   
+  if (check_retval(&retval, "IDACalcIC", 1)) { return (1); }
 
   /* Print output heading. */
   PrintHeader(rtol, atol, hwbackend);
@@ -339,18 +340,18 @@ int heatres(sunrealtype tres, N_Vector uu, N_Vector up, N_Vector resval,
   sunindextype mm, i, j, offset, loc;
   sunrealtype *uv, *upv, *resv, coeff;
   UserData data;
-  
+
 #ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
   N_VCopyFromDevice_Cuda(uu);
   N_VCopyFromDevice_Cuda(up);
-  
+
   uv   = N_VGetHostArrayPointer_Cuda(uu);
   upv  = N_VGetHostArrayPointer_Cuda(up);
   resv = N_VGetHostArrayPointer_Cuda(resval);
 #elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
   N_VCopyFromDevice_Hip(uu);
   N_VCopyFromDevice_Hip(up);
-  
+
   uv   = N_VGetHostArrayPointer_Hip(uu);
   upv  = N_VGetHostArrayPointer_Hip(up);
   resv = N_VGetHostArrayPointer_Hip(resval);
@@ -403,11 +404,11 @@ int jacHeat3(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
 
   // Create temporary CSC sparse matrix
   sunindextype NNZ = SUNMatrix_ReSolve_NNZ(JJ);
-  B = SUNSparseMatrix(NEQ, NEQ, NNZ, CSC_MAT, ctx);
+  B                = SUNSparseMatrix(NEQ, NEQ, NNZ, CSC_MAT, ctx);
 
   sunindextype* colptrs = SUNSparseMatrix_IndexPointers(B);
   sunindextype* rowvals = SUNSparseMatrix_IndexValues(B);
-  sunrealtype*  data    = SUNSparseMatrix_Data(B);
+  sunrealtype* data     = SUNSparseMatrix_Data(B);
 
   SUNMatZero(B);
 
@@ -461,14 +462,11 @@ int jacHeat3(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
 
   // Copy CSR data into ReSolve matrix
   memcpy(SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST),
-         SUNSparseMatrix_Data(Bt),
-         NNZ * sizeof(sunrealtype));
+         SUNSparseMatrix_Data(Bt), NNZ * sizeof(sunrealtype));
   memcpy(SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST),
-         SUNSparseMatrix_IndexPointers(Bt),
-         (NEQ + 1) * sizeof(sunindextype));
+         SUNSparseMatrix_IndexPointers(Bt), (NEQ + 1) * sizeof(sunindextype));
   memcpy(SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST),
-         SUNSparseMatrix_IndexValues(Bt),
-         NNZ * sizeof(sunindextype));
+         SUNSparseMatrix_IndexValues(Bt), NNZ * sizeof(sunindextype));
 
   SUNMatDestroy(B);
   SUNMatDestroy(Bt);
@@ -484,7 +482,6 @@ int jacHeat3(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
     SUNMatrix_ReSolve_SyncData(JJ, memspace);
   }
 
-
   return (0);
 }
 
@@ -496,43 +493,45 @@ int jacHeatInit(SUNMatrix JJ)
   sunindextype i, j, k, sum = 0, entry = 0;
 
   // Get pointers
-  sunindextype* rowptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
-  sunindextype* colvals = SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST);
-  sunrealtype*  data    = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
+  sunindextype* rowptrs =
+    SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
+  sunindextype* colvals = SUNMatrix_ReSolve_IndexValues(JJ,
+                                                        ReSolve::memory::HOST);
+  sunrealtype* data     = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
 
   // Fill the matrix
   for (k = 0; k < NEQ; k++)
   {
-    i = k/MGRID;
-    j = k%MGRID;
+    i = k / MGRID;
+    j = k % MGRID;
 
     // Check if exterior point
     if (j == 0 || j == MGRID - 1 || i == 0 || i == MGRID - 1)
     {
-      sum = sum + 1;
-      rowptrs[k+1] = sum;
-      colvals[entry] = k; 
-      data[entry] = ONE;
-      entry = entry + 1;
+      sum            = sum + 1;
+      rowptrs[k + 1] = sum;
+      colvals[entry] = k;
+      data[entry]    = ONE;
+      entry          = entry + 1;
     }
     else
     {
-      sum = sum + 5;
-      rowptrs[k+1] = sum;
-      colvals[entry] = k - MGRID;
+      sum                = sum + 5;
+      rowptrs[k + 1]     = sum;
+      colvals[entry]     = k - MGRID;
       colvals[entry + 1] = k - 1;
       colvals[entry + 2] = k;
       colvals[entry + 3] = k + 1;
       colvals[entry + 4] = k + MGRID;
-      data[entry] = -ONE/(dx*dx);
-      data[entry + 1] = -ONE/(dx*dx);
-      data[entry + 2] = beta;
-      data[entry + 3] = -ONE/(dx*dx);
-      data[entry + 4] = -ONE/(dx*dx);
-      entry = entry + 5;
+      data[entry]        = -ONE / (dx * dx);
+      data[entry + 1]    = -ONE / (dx * dx);
+      data[entry + 2]    = beta;
+      data[entry + 3]    = -ONE / (dx * dx);
+      data[entry + 4]    = -ONE / (dx * dx);
+      entry              = entry + 5;
     }
   }
-  rowptrs[NEQ+1] = entry;
+  rowptrs[NEQ + 1] = entry;
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(JJ, ReSolve::memory::HOST);
 
@@ -559,27 +558,28 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
 
   // Get host data pointer and index pointers for indexing
   sunrealtype* data = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
-  sunindextype* rowptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
+  sunindextype* rowptrs =
+    SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
 
   // Fill the data array
   for (k = 0; k < NEQ; k++)
   {
-    i = k/MGRID;
-    j = k%MGRID;
+    i = k / MGRID;
+    j = k % MGRID;
 
     entry = rowptrs[k];
 
     if (j == 0 || j == MGRID - 1 || i == 0 || i == MGRID - 1)
     {
-        data[entry] = ONE;
+      data[entry] = ONE;
     }
     else
     {
-      data[entry] = -ONE/(dx*dx);
-      data[entry + 1] = -ONE/(dx*dx);
+      data[entry]     = -ONE / (dx * dx);
+      data[entry + 1] = -ONE / (dx * dx);
       data[entry + 2] = beta;
-      data[entry + 3] = -ONE/(dx*dx);
-      data[entry + 4] = -ONE/(dx*dx);
+      data[entry + 3] = -ONE / (dx * dx);
+      data[entry + 4] = -ONE / (dx * dx);
     }
   }
   // Set to updated
@@ -707,7 +707,8 @@ static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
 
 static void PrintHeader(sunrealtype rtol, sunrealtype atol, std::string hwbackend)
 {
-  printf("\nidaHeat2D_ReSolve: Heat equation, serial example problem for IDA\n");
+  printf(
+    "\nidaHeat2D_ReSolve: Heat equation, serial example problem for IDA\n");
   printf("          Discretized heat equation on 2D unit square.\n");
   printf("          Zero boundary conditions,");
   printf(" polynomial initial conditions.\n");

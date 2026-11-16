@@ -27,7 +27,7 @@ set(IDA_examples "idaHeat2D_resolve.cpp\;develop"
 # Add CUDA-only example if the CUDA backend is enabled
 if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
   list(APPEND IDA_examples "idaHeat2D_resolve_cuda.cu\;develop"
-                           "idaFoodWeb_resolve_cuda.cu\;develop")
+       "idaFoodWeb_resolve_cuda.cu\;develop")
 endif()
 
 # Add the build and install targets for each IDA example
@@ -47,20 +47,25 @@ foreach(example_tuple ${IDA_examples})
 
   # libraries to link against
   target_link_libraries(
-    ${example_target} PRIVATE sundials_ida sundials_nvecserial
-                                sundials_sunlinsolresolve
-                                sundials_sunmatrixresolve SUNDIALS::ReSolve
-                              ${EXE_EXTRA_LINK_LIBS} ${OTHER_LIBS})
+    ${example_target}
+    PRIVATE sundials_ida
+            sundials_nvecserial
+            sundials_sunlinsolresolve
+            sundials_sunmatrixresolve
+            SUNDIALS::ReSolve
+            ${EXE_EXTRA_LINK_LIBS}
+            ${OTHER_LIBS})
 
   # Target GPU backends if necessary
   if(SUNDIALS_RESOLVE_BACKENDS MATCHES "CUDA")
-    target_link_libraries(${example_target} PRIVATE sundials_nveccuda SUNDIALS::ReSolve_CUDA)
-#     target_compile_options(${example_target} PRIVATE
-#   $<$<COMPILE_LANGUAGE:CUDA>:-fmad=false>
-# )
+    target_link_libraries(${example_target} PRIVATE sundials_nveccuda
+                                                    SUNDIALS::ReSolve_CUDA)
+    # target_compile_options(${example_target} PRIVATE
+    # $<$<COMPILE_LANGUAGE:CUDA>:-fmad=false> )
   elseif(SUNDIALS_RESOLVE_BACKENDS MATCHES "HIP")
-    target_link_libraries(${example_target} PRIVATE sundials_nvechip SUNDIALS::ReSolve_HIP)
-  endif()                              
+    target_link_libraries(${example_target} PRIVATE sundials_nvechip
+                                                    SUNDIALS::ReSolve_HIP)
+  endif()
 
   # add example to regression tests
   sundials_add_test(

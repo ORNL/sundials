@@ -34,12 +34,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sundials/sundials_types.h> /* definition of type sunrealtype           */
-#include <sunmatrix/sunmatrix_resolve.hpp>  /* access to ReSolve SUNMatrix          */
-#include <sunlinsol/sunlinsol_resolve.hpp>  /* access to ReSolve Linear Solver      */
+#include <sunlinsol/sunlinsol_resolve.hpp> /* access to ReSolve Linear Solver      */
+#include <sunmatrix/sunmatrix_resolve.hpp> /* access to ReSolve SUNMatrix          */
 
 // ReSolve headers
-#include <resolve/SystemSolver.hpp>       
 #include <resolve/LinSolverIterative.hpp>
+#include <resolve/SystemSolver.hpp>
 #include <resolve/workspace/LinAlgWorkspace.hpp>
 
 /* Problem Constants */
@@ -79,7 +79,7 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
 /* Prototypes for private functions */
 
 static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
-                             N_Vector id,  N_Vector res);
+                             N_Vector id, N_Vector res);
 static void PrintHeader(sunrealtype rtol, sunrealtype atol);
 static void PrintOutput(void* mem, sunrealtype t, N_Vector uu);
 static int check_flag(void* flagvalue, const char* funcname, int opt);
@@ -119,7 +119,7 @@ __global__ void resHeatKernel(const sunrealtype* uu, const sunrealtype* up,
 }
 
 __global__ void jacHeatKernel(sunrealtype* data, sunindextype* rowptrs,
-                                sunrealtype c_j)
+                              sunrealtype c_j)
 {
   sunrealtype dx   = ONE / (MGRID - ONE);
   sunrealtype beta = SUN_RCONST(4.0) / (dx * dx) + c_j;
@@ -141,16 +141,17 @@ __global__ void jacHeatKernel(sunrealtype* data, sunindextype* rowptrs,
     }
     else
     {
-      data[entry] = -ONE/(dx*dx);
-      data[entry + 1] = -ONE/(dx*dx);
+      data[entry]     = -ONE / (dx * dx);
+      data[entry + 1] = -ONE / (dx * dx);
       data[entry + 2] = beta;
-      data[entry + 3] = -ONE/(dx*dx);
-      data[entry + 4] = -ONE/(dx*dx);
+      data[entry + 3] = -ONE / (dx * dx);
+      data[entry + 4] = -ONE / (dx * dx);
     }
   }
 }
 
-__global__ void setInitHeatKernel(sunrealtype* up, sunrealtype* id, sunindextype mm)
+__global__ void setInitHeatKernel(sunrealtype* up, sunrealtype* id,
+                                  sunindextype mm)
 {
   sunindextype i, j, tid;
 
@@ -162,15 +163,12 @@ __global__ void setInitHeatKernel(sunrealtype* up, sunrealtype* id, sunindextype
     i = tid % mm;
     j = tid / mm;
 
-    if (j == 0 || j == mm - 1 || i == 0 || i == mm - 1) 
-    { 
-      up[tid] = ZERO; 
+    if (j == 0 || j == mm - 1 || i == 0 || i == mm - 1)
+    {
+      up[tid] = ZERO;
       id[tid] = ZERO;
     }
-    else
-    {
-      id[tid] = ONE;
-    }
+    else { id[tid] = ONE; }
   }
 }
 
@@ -275,7 +273,7 @@ int main(int argc, char* argv[])
   ReSolve::memory::MemorySpace memspace = ReSolve::memory::DEVICE;
 
   /* Create ReSolve SUNMatrix for use in linear solves */
-  nnz = MGRID * MGRID + ((MGRID-2)*(MGRID-2)*4);
+  nnz = MGRID * MGRID + ((MGRID - 2) * (MGRID - 2) * 4);
   A   = SUNMatrix_ReSolve(NEQ, NEQ, nnz, memspace, ctx);
   if (check_flag((void*)A, "SUNMatrix_ReSolve", 0)) { return (1); }
 
@@ -287,14 +285,14 @@ int main(int argc, char* argv[])
   std::string refactor = "cusolverrf";
   workspace.initializeHandles();
 
-  /* ReSolve direct solver instatiation */
+  /* ReSolve direct solver instantiation */
   ReSolve::SystemSolver solver(&workspace,
                                "klu",    // factorization
                                refactor, // refactorization
                                refactor, // triangular solve
                                "none",   // preconditioner (always 'none' here)
-                               "none"); // iterative refinement
-   
+                               "none");  // iterative refinement
+
   /* Create ReSolve linear solver */
   LS = SUNLinSol_ReSolve(&solver, A, memspace, ctx);
   if (check_flag((void*)LS, "SUNLinSol_ReSolve", 0)) { return (1); }
@@ -397,43 +395,45 @@ int jacHeatInit(SUNMatrix JJ)
   sunindextype i, j, k, sum = 0, entry = 0;
 
   // Get pointers
-  sunindextype* rowptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
-  sunindextype* colvals = SUNMatrix_ReSolve_IndexValues(JJ, ReSolve::memory::HOST);
-  sunrealtype*  data    = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
+  sunindextype* rowptrs =
+    SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::HOST);
+  sunindextype* colvals = SUNMatrix_ReSolve_IndexValues(JJ,
+                                                        ReSolve::memory::HOST);
+  sunrealtype* data     = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::HOST);
 
   // Fill the matrix
   for (k = 0; k < NEQ; k++)
   {
-    i = k/MGRID;
-    j = k%MGRID;
+    i = k / MGRID;
+    j = k % MGRID;
 
     // Check if exterior point
     if (j == 0 || j == MGRID - 1 || i == 0 || i == MGRID - 1)
     {
-      sum = sum + 1;
-      rowptrs[k+1] = sum;
-      colvals[entry] = k; 
-      data[entry] = ONE;
-      entry = entry + 1;
+      sum            = sum + 1;
+      rowptrs[k + 1] = sum;
+      colvals[entry] = k;
+      data[entry]    = ONE;
+      entry          = entry + 1;
     }
     else
     {
-      sum = sum + 5;
-      rowptrs[k+1] = sum;
-      colvals[entry] = k - MGRID;
+      sum                = sum + 5;
+      rowptrs[k + 1]     = sum;
+      colvals[entry]     = k - MGRID;
       colvals[entry + 1] = k - 1;
       colvals[entry + 2] = k;
       colvals[entry + 3] = k + 1;
       colvals[entry + 4] = k + MGRID;
-      data[entry] = -ONE/(dx*dx);
-      data[entry + 1] = -ONE/(dx*dx);
-      data[entry + 2] = beta;
-      data[entry + 3] = -ONE/(dx*dx);
-      data[entry + 4] = -ONE/(dx*dx);
-      entry = entry + 5;
+      data[entry]        = -ONE / (dx * dx);
+      data[entry + 1]    = -ONE / (dx * dx);
+      data[entry + 2]    = beta;
+      data[entry + 3]    = -ONE / (dx * dx);
+      data[entry + 4]    = -ONE / (dx * dx);
+      entry              = entry + 5;
     }
   }
-  rowptrs[NEQ+1] = entry;
+  rowptrs[NEQ + 1] = entry;
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(JJ, ReSolve::memory::HOST);
 
@@ -458,7 +458,8 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
 
   // Get device data pointer and index pointers for indexing
   sunrealtype* jac_data = SUNMatrix_ReSolve_Data(JJ, ReSolve::memory::DEVICE);
-  sunindextype* rowptrs = SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::DEVICE);
+  sunindextype* rowptrs =
+    SUNMatrix_ReSolve_IndexPointers(JJ, ReSolve::memory::DEVICE);
 
   data = (UserData)user_data;
 
@@ -467,8 +468,8 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
   unsigned block = 256;
   unsigned grid  = (mm * mm + block - 1) / block;
 
-  jacHeatKernel<<<grid, block>>>(jac_data, rowptrs, cj); 
-  
+  jacHeatKernel<<<grid, block>>>(jac_data, rowptrs, cj);
+
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(JJ, ReSolve::memory::DEVICE);
   SUNMatrix_ReSolve_SyncData(JJ, ReSolve::memory::HOST);
@@ -486,7 +487,8 @@ int jacHeat(sunrealtype tt, sunrealtype cj, N_Vector yy, N_Vector yp,
  * SetInitialProfile: routine to initialize u and up vectors.
  */
 
-static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up, N_Vector id, N_Vector res)
+static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up,
+                             N_Vector id, N_Vector res)
 {
   sunindextype mm, i, j;
   sunrealtype xfact, yfact, *udata, *updata, *iddata;
@@ -536,7 +538,8 @@ static int SetInitialProfile(UserData data, N_Vector uu, N_Vector up, N_Vector i
 
 static void PrintHeader(sunrealtype rtol, sunrealtype atol)
 {
-  printf("\nidaHeat2D_resolve_cuda: Heat equation, serial example problem for IDA \n");
+  printf("\nidaHeat2D_resolve_cuda: Heat equation, serial example problem for "
+         "IDA \n");
   printf("         Discretized heat equation on 2D unit square. \n");
   printf("         Zero boundary conditions,");
   printf(" polynomial initial conditions.\n");
