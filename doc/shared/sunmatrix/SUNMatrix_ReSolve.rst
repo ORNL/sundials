@@ -100,6 +100,26 @@ implementation specific functions:
    **Return value:**
       The number of nonzeros in the ``SUNMatrix`` object.
 
+.. cpp:function:: ReSolve::memory::MemorySpace SUNMatrix_ReSolve_MemorySpace(SUNMatrix A)
+
+   This function returns the memory space where Re::Solve performs operations
+
+   **Arguments:**
+      * *A* -- a ``SUNMatrix`` object.
+
+   **Return value:**
+      The Re::Solve memory space.
+
+.. cpp:function:: ReSolve::matrix::Csr* SUNMatrix_ReSolve_Matrix(SUNMatrix A)
+
+   This function returns the Re::Solve CSR Matrix object
+
+   **Arguments:**
+      * *A* -- a ``SUNMatrix`` object.
+
+   **Return value:**
+      The Re::Solve CSR matrix.
+
 
 .. cpp:function:: sunrealtype* SUNMatrix_ReSolve_Data(SUNMatrix A, ReSolve::memory::MemorySpace memspace)
 
