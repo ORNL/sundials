@@ -133,7 +133,8 @@ int main(int argc, char* argv[])
   // Destroy the SUNMatrix_ReSolve object
   SUNMatDestroy_ReSolve(A);
 
-  return 0;
+  if (fails > ZERO) { return (1); }
+  else { return (0); }
 }
 
 /* ----------------------------------------------------------------------
