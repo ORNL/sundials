@@ -56,9 +56,9 @@ int main(int argc, char* argv[])
   int fails = 0;      /* counter for test failures  */
   sunindextype N;     /* matrix columns, rows       */
   SUNLinearSolver LS; /* linear solver object       */
-  SUNMatrix A, B, C;  /* test matrices              */
-  N_Vector x, y, b;   /* test vectors               */
-  sunrealtype *matdata, *xdata;
+  SUNMatrix A, A_new, B, B_new, C, C_new;  /* test matrices              */
+  N_Vector x, x_new, y, y_new, b, b_new;   /* test vectors               */
+  sunrealtype *matdata, *matdata_new, *xdata, *xdata_new;
   int print_timing;
   sunindextype i, j, k;
   SUNContext sunctx;
@@ -95,39 +95,54 @@ int main(int argc, char* argv[])
   y = N_VNew_Serial(N, sunctx);
   b = N_VNew_Serial(N, sunctx);
 
-  /* Fill matrix with uniform random data in [0,1/N] */
+  /* Create another set of matrices and vectors to test reinit */
+  C_new = SUNDenseMatrix(N, N, sunctx);
+  x_new = N_VNew_Serial(N, sunctx);
+  y_new = N_VNew_Serial(N, sunctx);
+  b_new = N_VNew_Serial(N, sunctx);
+
+  /* Fill matrices with uniform random data in [0,1/N] */
   for (k = 0; k < 5 * N; k++)
   {
-    i          = rand() % N;
-    j          = rand() % N;
-    matdata    = SUNDenseMatrix_Column(C, j);
-    matdata[i] = (sunrealtype)rand() / (sunrealtype)RAND_MAX / N;
+    i               = rand() % N;
+    j               = rand() % N;
+    matdata         = SUNDenseMatrix_Column(C, j);
+    matdata_new     = SUNDenseMatrix_Column(C_new, j);
+    matdata[i]      = (sunrealtype)rand() / (sunrealtype)RAND_MAX / N;
+    matdata_new[i]  = (sunrealtype)rand() / (sunrealtype)RAND_MAX / N;
   }
 
-  /* Add identity to matrix */
+  /* Add identity to matrices */
   fails = SUNMatScaleAddI(ONE, C);
+  fails = SUNMatScaleAddI(ONE, C_new);
   if (fails)
   {
     printf("FAIL: SUNLinSol SUNMatScaleAddI failure\n");
     return (1);
   }
 
-  /* Fill x vector with uniform random data in [0,1] */
+  /* Fill x vectors with uniform random data in [0,1] */
   xdata = N_VGetArrayPointer(x);
+  xdata_new = N_VGetArrayPointer(x);
   for (i = 0; i < N; i++)
   {
     xdata[i] = (sunrealtype)rand() / (sunrealtype)RAND_MAX;
+    xdata_new[i] = (sunrealtype)rand() / (sunrealtype)RAND_MAX;
   }
 
-  /* Create sparse matrix from dense, and destroy B */
-  B = SUNSparseFromDenseMatrix(C, ZERO, 1);
+  /* Create sparse matrices from dense, and destroy B's */
+  B     = SUNSparseFromDenseMatrix(C, ZERO, 1);
+  B_new = SUNSparseFromDenseMatrix(C_new, ZERO, 1);
   SUNMatDestroy(C);
+  SUNMatDestroy(C_new);
 
   /* copy x into y to print in case of solver failure */
   N_VScale(ONE, x, y);
+  N_VScale(ONE, x_new, y_new);
 
-  /* create right-hand side vector for linear solve */
+  /* create right-hand side vectors for linear solve */
   fails = SUNMatMatvec(B, x, b);
+  fails = SUNMatMatvec(B_new, x_new, b_new);
   if (fails)
   {
     printf("FAIL: SUNLinSol SUNMatMatvec failure\n");
@@ -140,44 +155,76 @@ int main(int argc, char* argv[])
   N_Vector y_d = N_VNew_Cuda(N, sunctx);
   N_Vector b_d = N_VNew_Cuda(N, sunctx);
 
+  N_Vector x_d_new = N_VNew_Cuda(N, sunctx);
+  N_Vector y_d_new = N_VNew_Cuda(N, sunctx);
+  N_Vector b_d_new = N_VNew_Cuda(N, sunctx);
+
   // Get pointers
   sunrealtype* data_x = N_VGetHostArrayPointer_Cuda(x_d);
   sunrealtype* data_y = N_VGetHostArrayPointer_Cuda(y_d);
   sunrealtype* data_b = N_VGetHostArrayPointer_Cuda(b_d);
 
+  sunrealtype* data_x_new = N_VGetHostArrayPointer_Cuda(x_d_new);
+  sunrealtype* data_y_new = N_VGetHostArrayPointer_Cuda(y_d_new);
+  sunrealtype* data_b_new = N_VGetHostArrayPointer_Cuda(b_d_new);
+
   // Copy data
   memcpy(data_x, N_VGetArrayPointer(x), N * sizeof(sunrealtype));
   memcpy(data_y, N_VGetArrayPointer(y), N * sizeof(sunrealtype));
   memcpy(data_b, N_VGetArrayPointer(b), N * sizeof(sunrealtype));
+
+  memcpy(data_x_new, N_VGetArrayPointer(x_new), N * sizeof(sunrealtype));
+  memcpy(data_y_new, N_VGetArrayPointer(y_new), N * sizeof(sunrealtype));
+  memcpy(data_b_new, N_VGetArrayPointer(b_new), N * sizeof(sunrealtype));
 
   // Copy to device
   N_VCopyToDevice_Cuda(x_d);
   N_VCopyToDevice_Cuda(y_d);
   N_VCopyToDevice_Cuda(b_d);
 
+  N_VCopyToDevice_Cuda(x_d_new);
+  N_VCopyToDevice_Cuda(y_d_new);
+  N_VCopyToDevice_Cuda(b_d_new);
+
 #elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
   N_Vector x_d = N_VNew_Hip(N, sunctx);
   N_Vector y_d = N_VNew_Hip(N, sunctx);
   N_Vector b_d = N_VNew_Hip(N, sunctx);
+
+  N_Vector x_d_new = N_VNew_Hip(N, sunctx);
+  N_Vector y_d_new = N_VNew_Hip(N, sunctx);
+  N_Vector b_d_new = N_VNew_Hip(N, sunctx);
 
   // Get pointers
   sunrealtype* data_x = N_VGetHostArrayPointer_Hip(x_d);
   sunrealtype* data_y = N_VGetHostArrayPointer_Hip(y_d);
   sunrealtype* data_b = N_VGetHostArrayPointer_Hip(b_d);
 
+  sunrealtype* data_x_new = N_VGetHostArrayPointer_Hip(x_d_new);
+  sunrealtype* data_y_new = N_VGetHostArrayPointer_Hip(y_d_new);
+  sunrealtype* data_b_new = N_VGetHostArrayPointer_Hip(b_d_new);
+
   // Copy data
   memcpy(data_x, N_VGetArrayPointer(x), N * sizeof(sunrealtype));
   memcpy(data_y, N_VGetArrayPointer(y), N * sizeof(sunrealtype));
   memcpy(data_b, N_VGetArrayPointer(b), N * sizeof(sunrealtype));
+
+  memcpy(data_x_new, N_VGetArrayPointer(x_new), N * sizeof(sunrealtype));
+  memcpy(data_y_new, N_VGetArrayPointer(y_new), N * sizeof(sunrealtype));
+  memcpy(data_b_new, N_VGetArrayPointer(b_new), N * sizeof(sunrealtype));
 
   // Copy to device
   N_VCopyToDevice_Hip(x_d);
   N_VCopyToDevice_Hip(y_d);
   N_VCopyToDevice_Hip(b_d);
 
+  N_VCopyToDevice_Hip(x_d_new);
+  N_VCopyToDevice_Hip(y_d_new);
+  N_VCopyToDevice_Hip(b_d_new);
+
 #endif
 
-  /* Create ReSolve SUNMatrix from the Sparse Matrix */
+  /* Create ReSolve SUNMatrix objects from the Sparse Matrices */
   // Initialize a ReSolve HOST memory space.
   ReSolve::memory::MemorySpace memspace = ReSolve::memory::HOST;
   std::string hwbackend                 = "CPU";
@@ -191,7 +238,8 @@ int main(int argc, char* argv[])
 #endif
 
   // Create a SUNMatrix_ReSolve object
-  A = SUNMatrix_ReSolve(N, N, SUNSparseMatrix_NNZ(B), memspace, sunctx);
+  A     = SUNMatrix_ReSolve(N, N, SUNSparseMatrix_NNZ(B), memspace, sunctx);
+  A_new = SUNMatrix_ReSolve(N, N, SUNSparseMatrix_NNZ(B_new), memspace, sunctx);
 
   // Get pointers to content arrays
   sunrealtype* data = SUNMatrix_ReSolve_Data(A, ReSolve::memory::HOST);
@@ -199,6 +247,12 @@ int main(int argc, char* argv[])
     SUNMatrix_ReSolve_IndexValues(A, ReSolve::memory::HOST);
   sunindextype* index_pointers =
     SUNMatrix_ReSolve_IndexPointers(A, ReSolve::memory::HOST);
+  
+  sunrealtype* data_new = SUNMatrix_ReSolve_Data(A_new, ReSolve::memory::HOST);
+  sunindextype* index_values_new =
+    SUNMatrix_ReSolve_IndexValues(A_new, ReSolve::memory::HOST);
+  sunindextype* index_pointers_new =
+    SUNMatrix_ReSolve_IndexPointers(A_new, ReSolve::memory::HOST);
 
   // Copy the data in the Sparse matrix pointers to the ReSolve pointers
   memcpy(data, SUNSparseMatrix_Data(B),
@@ -210,17 +264,29 @@ int main(int argc, char* argv[])
   memcpy(index_pointers, SUNSparseMatrix_IndexPointers(B),
          (N + 1) * sizeof(sunindextype));
 
+  memcpy(data_new, SUNSparseMatrix_Data(B_new),
+         SUNSparseMatrix_NNZ(B_new) * sizeof(sunrealtype));
+
+  memcpy(index_values_new, SUNSparseMatrix_IndexValues(B_new),
+         SUNSparseMatrix_NNZ(B_new) * sizeof(sunindextype));
+
+  memcpy(index_pointers_new, SUNSparseMatrix_IndexPointers(B_new),
+         (N + 1) * sizeof(sunindextype));
+
   // Set to updated
   SUNMatrix_ReSolve_SetUpdated(A, ReSolve::memory::HOST);
+  SUNMatrix_ReSolve_SetUpdated(A_new, ReSolve::memory::HOST);
 
   // Sync to device if necessary
   if (memspace != ReSolve::memory::HOST)
   {
     SUNMatrix_ReSolve_SyncData(A, memspace);
+    SUNMatrix_ReSolve_SyncData(A_new, memspace);
   }
 
-  // Delete the sparse matrix
+  // Delete the sparse matrices
   SUNMatDestroy(B);
+  SUNMatDestroy(B_new);
 
   /* Set up the ReSolve workspace*/
   std::string refactor = "none"; // Refactorization method ID
@@ -264,6 +330,20 @@ int main(int argc, char* argv[])
   fails += Test_SUNLinSolGetID(LS, SUNLINEARSOLVER_RESOLVE, 0);
   fails += Test_SUNLinSolLastFlag(LS, 0);
 
+  // Reinitialize with new A_new matrix
+  SUNLinSolReInit_ReSolve(LS, A_new);
+  // Run solve tests again
+  fails += Test_SUNLinSolSetup(LS, A_new, 0);
+#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+  fails += Test_SUNLinSolSolve(LS, A_new, x_d_new, b_d_new, 1000 * SUN_UNIT_ROUNDOFF,
+                               SUNTRUE, 0);
+#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+  fails += Test_SUNLinSolSolve(LS, A_new, x_d_new, b_d_new, 1000 * SUN_UNIT_ROUNDOFF,
+                               SUNTRUE, 0);
+#else
+  fails += Test_SUNLinSolSolve(LS, A_new, x_new, b_new, 1000 * SUN_UNIT_ROUNDOFF, SUNTRUE, 0);
+#endif
+
   /* Print result */
   if (fails)
   {
@@ -290,15 +370,28 @@ int main(int argc, char* argv[])
   N_VDestroy(y);
   N_VDestroy(b);
 
+  SUNMatDestroy(A_new);
+  N_VDestroy(x_new);
+  N_VDestroy(y_new);
+  N_VDestroy(b_new);
+
   /* Free device vectors if necessary */
-#ifdef SUNDIALS_RESOLVE_BACKENDS_CUDA
+#if defined(SUNDIALS_RESOLVE_BACKENDS_CUDA) || defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
   N_VDestroy(x_d);
   N_VDestroy(y_d);
   N_VDestroy(b_d);
-#elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
-  N_VDestroy(x_d);
-  N_VDestroy(y_d);
-  N_VDestroy(b_d);
+
+  N_VDestroy(x_d_new);
+  N_VDestroy(y_d_new);
+  N_VDestroy(b_d_new);
+// #elif defined(SUNDIALS_RESOLVE_BACKENDS_HIP)
+//   N_VDestroy(x_d);
+//   N_VDestroy(y_d);
+//   N_VDestroy(b_d);
+
+//   N_VDestroy(x_d_new);
+//   N_VDestroy(y_d_new);
+//   N_VDestroy(b_d_new);
 #endif
 
   SUNContext_Free(&sunctx);

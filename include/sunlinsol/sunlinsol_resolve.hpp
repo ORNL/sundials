@@ -56,6 +56,7 @@ SUNLinSol_ReSolve(ReSolve::SystemSolver* solver, SUNMatrix A,
 SUNDIALS_EXPORT SUNLinearSolver_Type SUNLinSolGetType_ReSolve(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNLinearSolver_ID SUNLinSolGetID_ReSolve(SUNLinearSolver S);
 SUNDIALS_EXPORT SUNErrCode SUNLinSolInitialize_ReSolve(SUNLinearSolver S);
+SUNDIALS_EXPORT int SUNLinSolReInit_ReSolve(SUNLinearSolver S, SUNMatrix A);
 SUNDIALS_EXPORT int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A);
 SUNDIALS_EXPORT int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A,
                                            N_Vector x, N_Vector b,

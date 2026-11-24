@@ -24,8 +24,6 @@
 #include <sunlinsol/sunlinsol_resolve.hpp>
 #include <sunmatrix/sunmatrix_resolve.hpp>
 #include "sundials_debug.h"
-
-#include "sundials_cli.h"
 #include "sundials_macros.h"
 
 #include <resolve/LinSolverDirect.hpp>
@@ -227,6 +225,34 @@ int SUNLinSolSetup_ReSolve(SUNLinearSolver S, SUNMatrix A)
   }
 
   return SUN_SUCCESS;
+}
+
+/** 
+Function to reinitialize the solver with a new A matrix.
+**/
+int SUNLinSolReInit_ReSolve(SUNLinearSolver S, SUNMatrix A)
+{
+  /* Check for valid inputs */
+  if (S == NULL) { return SUN_ERR_ARG_CORRUPT; }
+
+  if ((A == NULL))
+  {
+    LASTFLAG(S) = SUN_ERR_ARG_CORRUPT;
+    return SUN_ERR_ARG_CORRUPT;
+  }
+
+  /* Ensure that A is a ReSolve matrix */
+  if (SUNMatGetID(A) != SUNMATRIX_RESOLVE)
+  {
+    LASTFLAG(S) = SUN_ERR_ARG_INCOMPATIBLE;
+    return SUN_ERR_ARG_INCOMPATIBLE;
+  }
+
+  /* Update the A matrix in the ReSolve SystemSolver object and force refactorization */
+  SOLVER(S)->setMatrix(SUNMatrix_ReSolve_Matrix(A));
+  FACTORIZED(S) = SUNFALSE;
+  
+  return 0;
 }
 
 int SUNLinSolSolve_ReSolve(SUNLinearSolver S, SUNMatrix A, N_Vector x,
