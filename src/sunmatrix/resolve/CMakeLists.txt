@@ -28,7 +28,7 @@ sundials_add_library(
   LINK_LIBRARIES PUBLIC sundials_core
   OBJECT_LIBRARIES
   INCLUDE_DIRECTORIES PUBLIC ${ReSolve_INCLUDE_DIR}
-  LINK_LIBRARIES PUBLIC SUNDIALS::ReSolve ${_libs_needed}
+  LINK_LIBRARIES PUBLIC SUNDIALS::ReSolve # ${_libs_needed}
   OUTPUT_NAME sundials_sunmatrixresolve
   VERSION ${sunmatrixlib_VERSION}
   SOVERSION ${sunmatrixlib_SOVERSION})
